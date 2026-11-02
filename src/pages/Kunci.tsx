@@ -1,3 +1,4 @@
+import { stashLivePassword } from '@/lib/siteRedirect';
 import { saveMembershipCredentials } from '@/lib/membershipAccess';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -101,6 +102,8 @@ export default function Kunci() {
           grant: data.grant || '',
         };
         try { sessionStorage.setItem(ssKey, JSON.stringify(cfg)); } catch { /* ignore */ }
+        // Dibawa ke Website B bila halaman live ada di domain lain.
+        stashLivePassword(pwInput.trim());
         navigate(`/live${showId ? `?show=${showId}` : ''}`, { replace: true });
       } else {
         setPwError(reasonMessage(data?.reason));
