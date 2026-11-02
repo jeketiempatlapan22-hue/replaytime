@@ -245,7 +245,7 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
           <div className="relative p-3 pb-0 flex items-start gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <Badge variant="secondary" className="text-xs">{criteriaLabel}</Badge>
+                {(criteriaLabel || replay.show_name) && <Badge variant="secondary" className="text-xs capitalize">{criteriaLabel || replay.show_name}</Badge>}
                 {isUnlocked ? (
                   <Badge className="bg-primary/15 text-primary border-0"><Unlock className="w-3 h-3 mr-1" /> Terbuka</Badge>
                 ) : !isPurchased && !membershipCovered && (
