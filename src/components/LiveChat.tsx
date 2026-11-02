@@ -94,6 +94,7 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
 
   useEffect(() => {
     refresh();
+    let liveOk = false;
     const ch = supabase.channel(`live-chat-${showId || 'global'}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_messages' }, (payload) => {
         const m = payload.new as Msg;
@@ -139,7 +140,6 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
         liveOk = status === 'SUBSCRIBED';
         if (liveOk) refresh();
       });
-    let liveOk = false;
     // Cadangan: kalau koneksi realtime putus, tetap sinkron tiap 5 detik.
     const poll = window.setInterval(() => { if (!liveOk && !document.hidden) refresh(); }, 5000);
     const onVis = () => { if (!document.hidden) refresh(); };
