@@ -46,8 +46,12 @@ export default function UserBlockAdmin() {
   };
 
   const toggleMode = async (v: boolean) => {
-    if (await setSetting('maintenance_mode', v ? 'true' : 'false')) {
-      setMode(v); toast.success(v ? 'Mode Perbaikan aktif (kecuali halaman Live)' : 'Mode Perbaikan dimatikan');
+    // Mode Perbaikan tidak terhubung antar website: catat website yang menyalakannya
+    // agar website lain (A/B) yang memakai data sama tidak ikut tertutup.
+    const okMode = await setSetting('maintenance_mode', v ? 'true' : 'false');
+    const okOrigin = await setSetting('maintenance_origin', v ? window.location.origin : '');
+    if (okMode && okOrigin) {
+      setMode(v); toast.success(v ? `Mode Perbaikan aktif hanya di ${window.location.host} (halaman Live tetap terbuka)` : 'Mode Perbaikan dimatikan');
     }
   };
 
@@ -79,7 +83,7 @@ export default function UserBlockAdmin() {
         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Wrench className="h-4 w-4" /> Mode Perbaikan</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">Saat aktif, semua halaman tertutup kecuali halaman Live dan panel admin.</p>
+            <p className="text-sm text-muted-foreground">Saat aktif, semua halaman tertutup kecuali halaman Live dan panel admin — hanya di website ini. Website lain (A/B) tidak ikut tertutup.</p>
             <Switch checked={mode} onCheckedChange={toggleMode} />
           </div>
           <div className="flex gap-2">

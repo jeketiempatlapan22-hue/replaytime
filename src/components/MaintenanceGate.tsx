@@ -33,9 +33,13 @@ export default function MaintenanceGate({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const loadSettings = async () => {
-      const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'replay_path']);
+      const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'maintenance_origin', 'replay_path']);
       const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-      setMode(m.maintenance_mode === 'true');
+      // Mode Perbaikan tidak terhubung antar website: hanya berlaku di website yang
+      // menyalakannya (maintenance_origin). Kosong = berlaku di semua (perilaku lama).
+      const origin = String(m.maintenance_origin || '').trim().replace(/\/+$/, '').toLowerCase();
+      const here = window.location.origin.toLowerCase();
+      setMode(m.maintenance_mode === 'true' && (!origin || origin === here));
       setMsg(m.maintenance_message || '');
       setSecretPath(normPath(m.replay_path || '') || 'rply');
     };
