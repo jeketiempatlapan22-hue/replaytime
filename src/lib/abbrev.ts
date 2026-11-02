@@ -1,6 +1,5 @@
 // Singkatan judul replay untuk Mode Kartu Ringkas.
-// Judul 3+ kata → huruf pertama tiap kata ("Cara Meminum Ramune" → CRM).
-// Judul 1–2 kata → konsonan awal tiap suku kata kata pertama + huruf awal kata berikutnya ("Pajama Drive" → PJMD).
+// Konsonan awal suku kata: 1–2 kata → 4 huruf ("Pajama Drive" → PJMD), 3+ kata → 3 huruf ("Cara Meminum Ramune" → CRM).
 const VOWEL = /[aiueo]/i;
 const STOP = new Set(['dan', 'di', 'ke', 'the', 'of', 'a', 'an', 'to']);
 
@@ -17,13 +16,13 @@ function syllableConsonants(word: string): string {
 }
 
 export function abbreviateTitle(title: string): string {
-  const words = String(title || '').replace(/[“”"']/g, '').split(/[\s\-–:/]+/).filter((w) => /[a-z0-9]/i.test(w));
+  const words = String(title || '').replace(/[“”"']/g, '').split(/[\s\-–:/]+/).filter((w) => /[a-z0-9]/i.test(w) && !STOP.has(w.toLowerCase()));
   if (!words.length) return '';
-  if (words.length >= 3) {
-    const main = words.filter((w) => !STOP.has(w.toLowerCase()));
-    return (main.length ? main : words).map((w) => w.replace(/[^a-z0-9]/gi, '').charAt(0)).join('').toUpperCase().slice(0, 6);
-  }
-  return (syllableConsonants(words[0]) + words.slice(1).map((w) => w.replace(/[^a-z0-9]/gi, '').charAt(0)).join('')).toUpperCase().slice(0, 6);
+  // Konsonan awal tiap suku kata seluruh judul, huruf kembar berurutan digabung.
+  let letters = '';
+  for (const w of words) for (const ch of syllableConsonants(w).toUpperCase()) if (letters.slice(-1) !== ch) letters += ch;
+  const len = words.length >= 3 ? 3 : 4;
+  return letters.slice(0, len);
 }
 
 export function displayShortTitle(r: { title: string; short_title?: string | null }): string {
