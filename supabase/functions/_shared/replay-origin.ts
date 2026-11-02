@@ -39,7 +39,8 @@ export function rewriteReplay(text: string, pathArg?: string): string {
   const path = pathArg ?? cache?.path ?? '';
   if (!text) return text;
   let out = text;
-  if (path && /Link Replay/i.test(text)) out = rewriteReplayBlock(text, path);
+  // Link Replay kini memakai domain asli (tanpa path rahasia); link /<path> lama tetap dikembalikan ke root.
+  if (path && /Link Replay/i.test(text)) out = stripReplayPath(text, path);
   // Domain Link Pesan (site_settings.link_origin): ganti domain semua link di pesan.
   const link = cache?.link;
   if (link && link !== 'realtime48show.my.id') out = out.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}${link}`);
@@ -51,4 +52,10 @@ function rewriteReplayBlock(text: string, path: string): string {
     if (seg.includes(`realtime48show.my.id/${path}`)) return seg; // sudah diarahkan
     return seg.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}realtime48show.my.id/${path}`);
   });
+}
+
+/** Kembalikan link "realtime48show.my.id/<path>" di pesan ke domain asli (root). */
+export function stripReplayPath(text: string, path: string): string {
+  const re = new RegExp(`(realtime48show\\.my\\.id)/${path}(?=[/?#\\s]|$)\\/?`, 'gi');
+  return text.replace(re, '$1/');
 }
