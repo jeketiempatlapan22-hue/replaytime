@@ -15,6 +15,13 @@
       "when": 1793518100257,
       "tag": "0001_active_show_featured_member",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793655720364,
+      "tag": "0002_replay_short_title",
+      "breakpoints": true
     }
   ]
 }

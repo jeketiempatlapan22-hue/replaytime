@@ -1794,6 +1794,7 @@ export type Database = {
           password: string
           price_coins: number
           price_idr: number
+          short_title: string
           show_name: string
           show_time: string | null
           source_type: string
@@ -1822,6 +1823,7 @@ export type Database = {
           password: string
           price_coins?: number
           price_idr?: number
+          short_title?: string
           show_name?: string
           show_time?: string | null
           source_type?: string
@@ -1850,6 +1852,7 @@ export type Database = {
           password?: string
           price_coins?: number
           price_idr?: number
+          short_title?: string
           show_name?: string
           show_time?: string | null
           source_type?: string
@@ -2633,6 +2636,7 @@ export type Database = {
           password: string
           price_coins: number
           price_idr: number
+          short_title: string
           show_name: string
           show_time: string | null
           source_type: string
