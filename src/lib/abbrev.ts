@@ -16,7 +16,7 @@ function syllableConsonants(word: string): string {
 }
 
 export function abbreviateTitle(title: string): string {
-  const words = String(title || '').replace(/[“”"']/g, '').split(/[\s\-–:/]+/).filter((w) => /[a-z0-9]/i.test(w) && !STOP.has(w.toLowerCase()));
+  const words = String(title || '').split(/\s[-–|]\s/)[0].replace(/[“”"']/g, '').split(/[\s\-–:/]+/).filter((w) => /[a-z0-9]/i.test(w) && !STOP.has(w.toLowerCase()));
   if (!words.length) return '';
   // Konsonan awal tiap suku kata seluruh judul, huruf kembar berurutan digabung.
   let letters = '';

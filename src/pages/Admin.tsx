@@ -1530,7 +1530,7 @@ export default function Admin() {
           </DialogHeader>
           <div className="space-y-4">
             <div><Label>Judul *</Label><Input placeholder="Judul replay" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
-            <div><Label>Singkatan Judul (kartu ringkas)</Label><Input placeholder={`Otomatis: ${abbreviateTitle(form.title || form.showName) || 'PJMD'}`} value={form.shortTitle} onChange={e => setForm(f => ({ ...f, shortTitle: e.target.value }))} /><p className="text-xs text-muted-foreground mt-1">Kosongkan untuk singkatan otomatis.</p></div>
+            <div><Label>Singkatan Judul (kartu ringkas)</Label><Input placeholder={`Otomatis: ${abbreviateTitle(form.title) || 'PJMD'}`} value={form.shortTitle} onChange={e => setForm(f => ({ ...f, shortTitle: e.target.value }))} /><p className="text-xs text-muted-foreground mt-1">Kosongkan untuk singkatan otomatis.</p></div>
             <div><Label>Nama Show</Label><Input placeholder="Contoh: Pajama Drive" value={form.showName} onChange={e => setForm(f => ({ ...f, showName: e.target.value }))} /></div>
             <div>
               <Label>Kriteria</Label>
