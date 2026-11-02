@@ -70,9 +70,9 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
         const isLive = /^\/(live|tv)(\/|$)/.test(path);
         const isReplay = !!replayMatch || seg === r.replay_path || seg === 'akses'
           || (seg === '' && new URLSearchParams(location.search).has('replay'));
-        // Replay dikunci (Hubungi Admin): jangan pindahkan ke Website B kecuali dari path rahasia.
+        // Mode kunci: link hasil pembelian tetap dipindah ke Website B; tanpa B tidak diputar di sini.
         const lockedHere = isReplay && seg !== r.replay_path && replayLocked(r, location.pathname);
-        const target = lockedHere ? '' : crossTarget(isLive ? r.live_origin : isReplay ? r.replay_origin : r.main_origin);
+        const target = crossTarget(isLive ? r.live_origin : isReplay ? r.replay_origin : r.main_origin);
         if (target) {
           let url: string;
           if (isLive) url = target + location.pathname + withLiveCredentials(location.search);
