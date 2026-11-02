@@ -3,7 +3,7 @@
 // Halaman utama tetap di domain yang sama; hanya link replay yang memakai path ini.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const PRIMARY_RE = /(https?:\/\/)?(www\.)?realtimestream\.my\.id/g;
+const PRIMARY_RE = /(https?:\/\/)?(www\.)?realtime48show\.my\.id/g;
 let cache: { path: string; link: string; at: number } | null = null;
 
 function normHost(v: unknown): string {
