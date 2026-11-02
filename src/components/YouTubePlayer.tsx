@@ -55,6 +55,7 @@ function buildSources(source: ReplaySource | null, replay: ReplayRow): PlaylistS
 
 
 export default function YouTubePlayer({ replay, onBack }: Props) {
+  const { hideTitle } = useReplayDisplay();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTvMenu, setShowTvMenu] = useState(false);
   const [showTvConnect, setShowTvConnect] = useState(false);
