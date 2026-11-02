@@ -1,3 +1,5 @@
+import { useReplayDisplay } from '@/hooks/useReplayDisplay';
+import { displayShortTitle } from '@/lib/abbrev';
 import { ArrowLeft, Maximize, Minimize, Eye, Loader2, Lock, PictureInPicture2, ListVideo, Cast, Copy, MonitorSmartphone, Tv } from 'lucide-react';
 import { isFullscreenActive, isVideoFullscreen, onFullscreenChange, requestFs, exitFs, lockLandscape } from '@/lib/fullscreen';
 
@@ -348,7 +350,7 @@ export default function YouTubePlayer({ replay, onBack }: Props) {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base sm:text-lg font-semibold truncate font-sans">{replay.title}</h1>
+          <h1 className="text-base sm:text-lg font-semibold truncate font-sans">{hideTitle ? displayShortTitle(replay as any) : replay.title}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{replay.criteria}</p>
         </div>
 

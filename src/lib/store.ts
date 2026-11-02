@@ -13,7 +13,7 @@ export async function getReplays(): Promise<ReplayRow[]> {
   // after the user enters the correct password.
   const { data, error } = await supabase
     .from('replays')
-    .select('id, title, show_name, date, criteria, featured_member, lineup, image_url, view_count, show_time, created_at, updated_at, source_type, price_coins, price_idr, image_fit')
+    .select('id, title, show_name, date, criteria, featured_member, lineup, image_url, view_count, show_time, created_at, updated_at, source_type, price_coins, price_idr, image_fit, short_title')
     .eq('is_offline', false)
     .order('date', { ascending: false })
     .order('show_time', { ascending: false });
