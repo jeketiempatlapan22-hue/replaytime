@@ -272,7 +272,7 @@ export default function Index() {
     // Bersihkan sisa state player lama agar halaman / tidak pernah blank
     // karena overlay player ter-restore dalam keadaan kosong/gagal.
     try { sessionStorage.removeItem(ACTIVE_REPLAY_STORAGE_KEY); } catch { /* ignore */ }
-  }, [allReplays, displayedReplay, loading]);
+  }, [allReplays, displayedReplay, loading, lockReady]);
 
   // Scroll-to-top visibility
   useEffect(() => {
