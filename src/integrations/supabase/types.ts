@@ -138,6 +138,7 @@ export type Database = {
           replay_m3u8_url: string
           replay_mode: boolean
           replay_youtube_url: string
+          short_title: string
           show_date: string
           show_time: string
           sort_order: number
@@ -179,6 +180,7 @@ export type Database = {
           replay_m3u8_url?: string
           replay_mode?: boolean
           replay_youtube_url?: string
+          short_title?: string
           show_date: string
           show_time?: string
           sort_order?: number
@@ -220,6 +222,7 @@ export type Database = {
           replay_m3u8_url?: string
           replay_mode?: boolean
           replay_youtube_url?: string
+          short_title?: string
           show_date?: string
           show_time?: string
           sort_order?: number
@@ -2520,6 +2523,7 @@ export type Database = {
           replay_m3u8_url: string
           replay_mode: boolean
           replay_youtube_url: string
+          short_title: string
           show_date: string
           show_time: string
           sort_order: number
@@ -2570,6 +2574,7 @@ export type Database = {
           replay_m3u8_url: string
           replay_mode: boolean
           replay_youtube_url: string
+          short_title: string
           show_date: string
           show_time: string
           sort_order: number
