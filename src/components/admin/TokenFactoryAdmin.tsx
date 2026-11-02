@@ -31,7 +31,7 @@ type MbRow = {
   created_by: string; created_at: string; status: string;
 };
 
-const SITE = 'https://realtimestream.my.id';
+const SITE = 'https://realtime48show.my.id';
 
 async function copy(text: string, label: string) {
   const copied = await copyToClipboard(text);

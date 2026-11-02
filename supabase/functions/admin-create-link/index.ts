@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
   if (!kind) return json({ error: 'missing_fields' }, 400);
 
   const { data: settings } = await admin.from('site_settings').select('key,value').in('key', ['site_origin']);
-  const origin = String(settings?.[0]?.value || 'https://realtimestream.my.id').replace(/\/+$/, '');
+  const origin = String(settings?.[0]?.value || 'https://realtime48show.my.id').replace(/\/+$/, '');
   const siteOnly = origin.replace(/^https?:\/\//, '');
 
   if (kind === 'bundle') {

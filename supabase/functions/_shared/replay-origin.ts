@@ -1,9 +1,9 @@
 // Path Replay Rahasia: baris "Link Replay" di semua pesan diarahkan ke
-// realtimestream.my.id/<path> (site_settings.replay_path, default "rply").
+// realtime48show.my.id/<path> (site_settings.replay_path, default "rply").
 // Halaman utama tetap di domain yang sama; hanya link replay yang memakai path ini.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const PRIMARY_RE = /(https?:\/\/)?(www\.)?realtimestream\.my\.id/g;
+const PRIMARY_RE = /(https?:\/\/)?(www\.)?realtime48show\.my\.id/g;
 let cache: { path: string; link: string; at: number } | null = null;
 
 function normHost(v: unknown): string {
@@ -34,7 +34,7 @@ export async function primeReplayHost(): Promise<string> {
   return cache.path;
 }
 
-/** Arahkan "Link Replay" ke realtimestream.my.id/<path> (hanya blok Link Replay). */
+/** Arahkan "Link Replay" ke realtime48show.my.id/<path> (hanya blok Link Replay). */
 export function rewriteReplay(text: string, pathArg?: string): string {
   const path = pathArg ?? cache?.path ?? '';
   if (!text) return text;
@@ -42,13 +42,13 @@ export function rewriteReplay(text: string, pathArg?: string): string {
   if (path && /Link Replay/i.test(text)) out = rewriteReplayBlock(text, path);
   // Domain Link Pesan (site_settings.link_origin): ganti domain semua link di pesan.
   const link = cache?.link;
-  if (link && link !== 'realtimestream.my.id') out = out.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}${link}`);
+  if (link && link !== 'realtime48show.my.id') out = out.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}${link}`);
   return out;
 }
 
 function rewriteReplayBlock(text: string, path: string): string {
   return text.replace(/Link Replay[\s\S]*?(?=\n\s*\n|$)/gi, (seg) => {
-    if (seg.includes(`realtimestream.my.id/${path}`)) return seg; // sudah diarahkan
-    return seg.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}realtimestream.my.id/${path}`);
+    if (seg.includes(`realtime48show.my.id/${path}`)) return seg; // sudah diarahkan
+    return seg.replace(PRIMARY_RE, (_m, scheme) => `${scheme ? 'https://' : ''}realtime48show.my.id/${path}`);
   });
 }

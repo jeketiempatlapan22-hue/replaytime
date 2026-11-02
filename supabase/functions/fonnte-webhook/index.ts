@@ -128,7 +128,7 @@ async function createTokenInline(
       .from('replays').select('id,title,date,password').eq('id', opts.replayId).maybeSingle();
     if (!replay) return { ok: false, error: 'replay_not_found' };
 
-    const origin = (opts.settingsMap.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+    const origin = (opts.settingsMap.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
     const token = newToken();
     const isPersonal = opts.kind === 'personal';
 
@@ -552,14 +552,14 @@ Deno.serve(async (req) => {
           if (verifyJson?.status !== 'paid') {
             reply = `⏳ Pembayaran *${lastOrder.pakasir_order_id}* belum terverifikasi Pakasir. Coba */cek* lagi setelah pembayaran berhasil.`;
           } else {
-            const origin = (map.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+            const origin = (map.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
             const link = lastOrder.show_id && !lastOrder.replay_id
               ? `${origin}/live?show=${lastOrder.show_id}&t=${lastOrder.access_token}`
               : `${origin}/akses?token=${lastOrder.access_token}${lastOrder.replay_id ? `&replay=${lastOrder.replay_id}` : ''}`;
             reply = `✅ Order Anda sudah lunas.\n\n${lastOrder.item_title}\n🔗 ${link}`;
           }
         } else {
-        const origin = (map.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+        const origin = (map.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
         const link = lastOrder.show_id && !lastOrder.replay_id
           ? `${origin}/live?show=${lastOrder.show_id}&t=${lastOrder.access_token}`
           : `${origin}/akses?token=${lastOrder.access_token}${lastOrder.replay_id ? `&replay=${lastOrder.replay_id}` : ''}`;
@@ -734,7 +734,7 @@ Deno.serve(async (req) => {
           if (error) {
             reply = `❌ Gagal membuat token. ${error.message}`;
           } else {
-            const origin = (map.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+            const origin = (map.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
             const link = `${origin}/live?show=${s.id}&t=${token}`;
             const header = isPublic ? '🎁 *TOKEN LIVE PUBLIK*' : '🔐 *TOKEN LIVE SATUAN*';
             const access = isPublic ? '🔓 Bisa dibuka di banyak perangkat.' : '👤 Hanya untuk *1 perangkat pertama*.';
@@ -749,7 +749,7 @@ Deno.serve(async (req) => {
               link,
               '',
               '🎬 *Link Replay:*',
-              'realtimestream.my.id',
+              'realtime48show.my.id',
               livePwd ? `🗝️ Sandi: *${livePwd}*` : null,
               '',
               access,

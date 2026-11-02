@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || 'list');
     const { data: st } = await admin.from('site_settings').select('value').eq('key', 'site_origin').maybeSingle();
-    const origin = String(st?.value || 'https://realtimestream.my.id').replace(/\/+$/, '');
+    const origin = String(st?.value || 'https://realtime48show.my.id').replace(/\/+$/, '');
 
     const browserId = String(body.browser_id || '').slice(0, 100).trim() || null;
     const deviceFp = String(body.device_fp || '').replace(/[^a-z0-9|./ -]/gi, '').slice(0, 100) || null;

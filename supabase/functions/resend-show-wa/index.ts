@@ -74,7 +74,7 @@ async function buildMessage(admin: any, order: any) {
   const { data: settings } = await admin
     .from('site_settings').select('key,value').in('key', ['site_origin', 'wa_message_template', 'wa_show_template']);
   const sm = new Map((settings ?? []).map((s: any) => [s.key, s.value]));
-  const origin = (sm.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+  const origin = (sm.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
   const tpl = sm.get('wa_message_template') ||
     '🎬 *ReplayTime*\n━━━━━━━━━━━━━━\n\n🎤 *{title}*\n{date_line}🔗 *Link Akses*\n{link}\n{password_line}{live_link_block}━━━━━━━━━━━━━━\n✨ Selamat menonton! 💖';
   const showTpl = sm.get('wa_show_template') ||
@@ -313,8 +313,8 @@ Deno.serve(async (req) => {
           await admin.from('orders').update({ token_sent_at: new Date().toISOString() }).eq('id', order.id);
           if (order.kind !== 'coin_topup' && order.access_token) {
             const link = order.show_id && !order.replay_id
-              ? `${(await admin.from('site_settings').select('value').eq('key', 'site_origin').maybeSingle()).data?.value || 'https://realtimestream.my.id'}/live?show=${order.show_id}&t=${order.access_token}`
-              : `${(await admin.from('site_settings').select('value').eq('key', 'site_origin').maybeSingle()).data?.value || 'https://realtimestream.my.id'}/akses?token=${order.access_token}${order.replay_id ? `&replay=${order.replay_id}` : ''}`;
+              ? `${(await admin.from('site_settings').select('value').eq('key', 'site_origin').maybeSingle()).data?.value || 'https://realtime48show.my.id'}/live?show=${order.show_id}&t=${order.access_token}`
+              : `${(await admin.from('site_settings').select('value').eq('key', 'site_origin').maybeSingle()).data?.value || 'https://realtime48show.my.id'}/akses?token=${order.access_token}${order.replay_id ? `&replay=${order.replay_id}` : ''}`;
             await admin.from('token_deliveries').insert({
               phone: sendPhone, replay_id: order.replay_id, replay_title: order.item_title,
               order_id: order.id, access_token: order.access_token,

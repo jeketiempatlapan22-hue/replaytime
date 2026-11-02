@@ -4,13 +4,13 @@ import "./index.css";
 import { registerServiceWorker } from "./lib/pwa";
 
 // Redirect ke domain utama (mempertahankan path + query + hash supaya token tetap berfungsi)
-const PRIMARY_HOST = 'realtimestream.my.id';
-const OLD_HOST = 'realtime48stream.my.id';
+const PRIMARY_HOST = 'realtime48show.my.id';
+const OLD_HOSTS = ['realtime48stream.my.id', 'realtimestream.my.id'];
 const REDIRECT_HOSTS = new Set([
   'replaytime.lovable.app',
-  'www.realtimestream.my.id',
-  OLD_HOST,
-  `www.${OLD_HOST}`,
+  `www.${PRIMARY_HOST}`,
+  ...OLD_HOSTS,
+  ...OLD_HOSTS.map((h) => `www.${h}`),
 ]);
 if (typeof window !== 'undefined' && REDIRECT_HOSTS.has(window.location.hostname)) {
   const { pathname, search, hash } = window.location;
@@ -22,7 +22,11 @@ try {
     const k = localStorage.key(i);
     if (!k) continue;
     const v = localStorage.getItem(k);
-    if (v && v.includes(OLD_HOST)) localStorage.setItem(k, v.split(OLD_HOST).join(PRIMARY_HOST));
+    if (v && OLD_HOSTS.some((h) => v.includes(h))) {
+      let nv = v;
+      for (const h of OLD_HOSTS) nv = nv.split(h).join(PRIMARY_HOST);
+      localStorage.setItem(k, nv);
+    }
   }
 } catch { /* ignore */ }
 

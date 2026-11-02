@@ -383,7 +383,7 @@ Deno.serve(async (req) => {
   const { data: settings } = await admin
     .from('site_settings').select('key,value').in('key', ['site_origin', 'wa_message_template', 'wa_show_template']);
   const sm = new Map((settings ?? []).map((s) => [s.key, s.value]));
-  const origin = (sm.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+  const origin = (sm.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
   const tpl = sm.get('wa_message_template') || DEFAULT_WA_TPL;
   const showTpl = sm.get('wa_show_template') ||
     '🔐 *TOKEN LIVE SATUAN*\n\n🎤 *{title}*\n\n📅 {date}\n\n🔗 *Link Live:*\n{live_link}\n\n🎬 *Link Replay:* {site}\n\n{password_line}👤 Hanya untuk *1 perangkat pertama*.\n\n— *ReplayTime* 💖';
@@ -441,7 +441,7 @@ Deno.serve(async (req) => {
   } else try {
     const memTpl = (await admin.from('site_settings').select('value').eq('key', 'wa_membership_template').maybeSingle())
       .data?.value ||
-      '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtimestream.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
+      '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtime48show.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
     const { data: mOrders } = await admin
       .from('membership_orders').select('*')
       .in('status', ['reserved', 'paid', 'expired'])

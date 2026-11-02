@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await admin
       .from("site_settings").select("key,value").eq("key", "site_origin").maybeSingle();
-    const origin = String((settings as any)?.value || "https://realtimestream.my.id").replace(/\/+$/, "");
+    const origin = String((settings as any)?.value || "https://realtime48show.my.id").replace(/\/+$/, "");
 
     // ===== Membership =====
     if (mtoken) {

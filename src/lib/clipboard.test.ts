@@ -6,7 +6,7 @@ describe('complete access text copying', () => {
   it('copies the entire token link and replay information', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    const text = 'https://realtimestream.my.id/live?show=show-id&t=abcdefghijklmnopqrstuvwxyz0123456789\nInfo Replay: tersedia besok';
+    const text = 'https://realtime48show.my.id/live?show=show-id&t=abcdefghijklmnopqrstuvwxyz0123456789\nInfo Replay: tersedia besok';
     expect(await copyToClipboard(text)).toBe(true);
     expect(writeText).toHaveBeenCalledWith(text);
   });

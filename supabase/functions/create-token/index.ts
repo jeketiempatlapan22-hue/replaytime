@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
 
   const { data: settings } = await admin.from('site_settings').select('key,value');
   const settingsMap = new Map((settings ?? []).map((s: any) => [s.key, s.value]));
-  const origin = (settingsMap.get('site_origin') as string) || 'https://realtimestream.my.id';
+  const origin = (settingsMap.get('site_origin') as string) || 'https://realtime48show.my.id';
   const liveUrl = `${origin}/live`;
 
   // Sandi live: ambil dari active_show terkait replay; fallback ke live_config_private.
