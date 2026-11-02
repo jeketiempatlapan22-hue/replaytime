@@ -9,5 +9,5 @@
 - Route pages across sites via DomainRouter using site_settings main_origin/live_origin/replay_origin (admin & reseller never redirected), and swap message domains via link_origin in _shared/replay-origin.ts, so twin sites sharing one backend can trade roles without reissuing links.
 - Carry viewer credentials (t / mtoken+mp / pw / replay token) in the URL through src/lib/siteRedirect.ts whenever DomainRouter or a watch button crosses to another domain, because purchases are stored per-origin in browser storage.
 - Gate YouTube sources server-side in get-replay-source via site_settings.hide_youtube_on_main (only replay_origin receives them) and gate compact cards via compact_replay_cards, so both modes are reversible without touching replay data.
-- Lock replays (contact-admin card, no Website B redirect, no token autoplay) via replayLocked() when compact_replay_cards and hide_youtube_on_main are both on, except on the secret replay_path, so the hidden-source mode stays reversible.
+- Never lock replay cards in compact/hidden-source mode: purchase (QRIS/coins) and Tonton Replay stay available and redirect to replay_origin, so hiding sources on A never blocks sales.
 - Keep short titles on active_shows.short_title and copy them to replays in convert_show_to_replay plus a sync trigger, so admins set abbreviations once at show entry.
