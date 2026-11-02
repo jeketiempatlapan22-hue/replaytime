@@ -8,6 +8,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function hideYoutubeFor(supabase: any, req: Request): Promise<boolean> {
+  const { data } = await supabase.from("site_settings").select("key,value").in("key", ["hide_youtube_on_main", "replay_origin"]);
+  const m = Object.fromEntries(((data || []) as any[]).map((r) => [r.key, String(r.value || "")]));
+  if (m.hide_youtube_on_main !== "true") return false;
+  const host = (u: string) => { try { return new URL(u).host.toLowerCase().replace(/^www\./, ""); } catch { return ""; } };
+  const replayHost = host(m.replay_origin || "");
+  const reqHost = host(req.headers.get("origin") || req.headers.get("referer") || "");
+  // Website Replay (B) tetap menerima YouTube; selain itu disembunyikan.
+  return !(replayHost && reqHost === replayHost);
+}
+
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -240,13 +251,26 @@ Deno.serve(async (req) => {
     // Pemeriksaan jaringan ini dapat menunggu hingga beberapa detik dan membuat
     // UI tampak loading terus. Ketersediaan video ditangani scan-replay-sources.
 
+    // Admin bisa menyembunyikan sumber YouTube di website utama (Website A) agar
+    // ID YouTube tidak pernah sampai ke penonton di sana. Website Replay (B) tetap normal.
+    let sources = Array.isArray(replay.sources) ? replay.sources : [];
+    let ytId = replay.youtube_id || "";
+    let ytAlt = (replay as any).youtube_alt_id || "";
+    if (await hideYoutubeFor(supabase, req)) {
+      sources = sources.filter((s: any) => String(s?.type || "").toLowerCase() !== "youtube" && !/youtu\.?be/i.test(String(s?.url || "")));
+      ytId = ""; ytAlt = "";
+      if (!sources.length && !String(replay.m3u8_url || "").trim()) {
+        return json({ valid: false, reason: "source_hidden" }, 403);
+      }
+    }
+
     return json({
       valid: true,
-      youtube_id: replay.youtube_id || "",
-      youtube_alt_id: (replay as any).youtube_alt_id || "",
+      youtube_id: ytId,
+      youtube_alt_id: ytAlt,
       m3u8_url: replay.m3u8_url || "",
       source_type: replay.source_type || "youtube",
-      sources: Array.isArray(replay.sources) ? replay.sources : [],
+      sources,
       ...(memberCred ? { membership: memberCred } : {}),
     });
 
