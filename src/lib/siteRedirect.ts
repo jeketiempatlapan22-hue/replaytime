@@ -108,8 +108,9 @@ export function replayDisplayFlags(r: SiteRouting, currentHost = window.location
   return { compact: r.compact_replay_cards, hideTitle, locked: replayLocked(r) };
 }
 
-/** Replay tidak lagi dikunci: kartu tetap bisa dibeli (QRIS/koin) dan Tonton Replay langsung ke Website B. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function replayLocked(_r: SiteRouting, _pathname?: string): boolean {
-  return false;
+/** Kartu ringkas + YouTube disembunyikan = mode kunci (beli tetap ada, sandi/tonton diganti Hubungi Admin), kecuali di path rahasia. */
+export function replayLocked(r: SiteRouting, pathname = typeof window !== 'undefined' ? window.location.pathname : '/'): boolean {
+  if (!r.compact_replay_cards || !r.hide_youtube_on_main) return false;
+  const seg = pathname.toLowerCase().replace(/^\/+|\/+$/g, '').split('/')[0];
+  return seg !== r.replay_path;
 }
