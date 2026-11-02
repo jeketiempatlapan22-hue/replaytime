@@ -19,6 +19,8 @@ export default function UserBlockAdmin() {
   const [mainOrigin, setMainOrigin] = useState('');
   const [replayOrigin, setReplayOrigin] = useState('');
   const [linkOrigin, setLinkOrigin] = useState('');
+  const [hideYt, setHideYt] = useState(false);
+  const [compact, setCompact] = useState(false);
   const [q, setQ] = useState('');
   const [found, setFound] = useState<Found[]>([]);
   const [reason, setReason] = useState('');
@@ -26,9 +28,9 @@ export default function UserBlockAdmin() {
   const [busy, setBusy] = useState(false);
 
   const loadAll = async () => {
-    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin']);
+    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin', 'hide_youtube_on_main', 'compact_replay_cards']);
     const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-    setMode(m.maintenance_mode === 'true'); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || '');
+    setMode(m.maintenance_mode === 'true'); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || ''); setHideYt(m.hide_youtube_on_main === 'true'); setCompact(m.compact_replay_cards === 'true');
     const { data: b } = await supabase.from('blocked_users').select('id,user_id,phone,email,reason,created_at').eq('active', true).order('created_at', { ascending: false });
     setBlocked((b || []) as BlockedRow[]);
   };
@@ -121,6 +123,17 @@ export default function UserBlockAdmin() {
               </div>
             ))}
             <p className="text-xs text-muted-foreground">Catatan: domain di pesan hanya mengganti alamat; pastikan domain itu sudah tersambung ke website A atau B.</p>
+          </div>
+          <div className="space-y-3 pt-2 border-t border-border">
+            <p className="text-sm font-medium text-foreground">Tampilan Replay di Website Ini</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">Sembunyikan sumber YouTube di website ini — ID & video YouTube tidak dikirim ke penonton kecuali di Website Replay (B). Matikan untuk kembali normal.</p>
+              <Switch checked={hideYt} onCheckedChange={async (v) => { if (await setSetting('hide_youtube_on_main', v ? 'true' : 'false')) { setHideYt(v); toast.success(v ? 'Sumber YouTube disembunyikan' : 'Sumber YouTube kembali normal'); } }} />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">Kartu replay ringkas — hanya singkatan judul, tanggal, kriteria, line up (tanpa foto), dan tombol beli. Judul asli & foto tidak dihapus; matikan untuk kembali seperti semula.</p>
+              <Switch checked={compact} onCheckedChange={async (v) => { if (await setSetting('compact_replay_cards', v ? 'true' : 'false')) { setCompact(v); toast.success(v ? 'Kartu ringkas aktif' : 'Kartu kembali lengkap'); } }} />
+            </div>
           </div>
         </CardContent>
       </Card>
