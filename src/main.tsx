@@ -22,7 +22,11 @@ try {
     const k = localStorage.key(i);
     if (!k) continue;
     const v = localStorage.getItem(k);
-    if (v && v.includes(OLD_HOST)) localStorage.setItem(k, v.split(OLD_HOST).join(PRIMARY_HOST));
+    if (v && OLD_HOSTS.some((h) => v.includes(h))) {
+      let nv = v;
+      for (const h of OLD_HOSTS) nv = nv.split(h).join(PRIMARY_HOST);
+      localStorage.setItem(k, nv);
+    }
   }
 } catch { /* ignore */ }
 
