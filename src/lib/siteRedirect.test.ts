@@ -26,7 +26,7 @@ import { replayLocked, parseRouting as pr } from './siteRedirect';
 describe('replayLocked', () => {
   const both = pr([{ key: 'compact_replay_cards', value: 'true' }, { key: 'hide_youtube_on_main', value: 'true' }, { key: 'replay_path', value: 'rply' }]);
   it('locks main list only when both toggles on', () => {
-    expect(replayLocked(both, '/')).toBe(false);
+    expect(replayLocked(both, '/')).toBe(true);
     expect(replayLocked(pr([{ key: 'compact_replay_cards', value: 'true' }]), '/')).toBe(false);
   });
   it('never locks the secret replay path', () => {

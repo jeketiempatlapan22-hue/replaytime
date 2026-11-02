@@ -354,16 +354,29 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
 
           {locked ? (
             <div className="space-y-2 pt-1">
-              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-center text-xs font-semibold text-primary">
-                Hubungi Admin Untuk Akses Replay
-              </div>
-              <Button asChild className="w-full">
+              {isPurchased ? (
+                <AccessInfoCard token={purchasedToken} replayId={replay.id} fallbackLink={accessLink} compact />
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-primary">Rp {getReplayPrice(replay).toLocaleString('id-ID')}</span>
+                    {((replay as any).price_coins ?? 0) > 0 && (
+                      <Badge variant="secondary" className="text-xs">atau {(replay as any).price_coins} koin</Badge>
+                    )}
+                  </div>
+                  <Button type="button" className="w-full gap-2" onClick={() => setBuyOpen(true)}>
+                    <ShoppingCart className="w-4 h-4" />
+                    {((replay as any).price_coins ?? 0) > 0 ? 'Beli Replay via QRIS & Koin' : 'Beli Replay via QRIS'}
+                  </Button>
+                </>
+              )}
+              <Button asChild variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
                 <a
                   href={adminWaLink(adminWa, `Halo admin, saya ingin akses replay ${displayShortTitle(replay as any)} (${replay.date}).`)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Hubungi Admin
+                  Hubungi Admin Untuk Akses Replay
                 </a>
               </Button>
             </div>

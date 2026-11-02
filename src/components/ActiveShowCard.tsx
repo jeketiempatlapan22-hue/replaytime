@@ -17,6 +17,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { thumbUrl } from '@/lib/imageUrl';
 import AccessInfoCard from '@/components/AccessInfoCard';
 import AnonReplayPassword from '@/components/AnonReplayPassword';
+import { useReplayDisplay } from '@/hooks/useReplayDisplay';
+import { useAdminWa } from '@/hooks/useAdminWa';
+import { adminWaLink } from '@/lib/adminWa';
 
 
 
@@ -46,6 +49,8 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
   const target = getShowDateTime(show);
   const cd = useCountdown(target);
   const navigate = useNavigate();
+  const { locked: lockedMode } = useReplayDisplay();
+  const adminWa = useAdminWa();
   const { user } = useAuth();
   const [buyOpen, setBuyOpen] = useState(false);
   const [buyMode, setBuyMode] = useState<'show' | 'replay'>('show');
@@ -281,6 +286,23 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
 
 
         {/* Action buttons */}
+        {lockedMode ? (
+          <div className="pt-2 space-y-2">
+            {!purchasedToken && (replayMode ? replayBuyable : showBuyable) && (
+              <Button className="w-full gap-2" onClick={() => openBuy(replayMode ? 'replay' : 'show')}>
+                <ShoppingCart className="w-4 h-4" />
+                {replayMode
+                  ? (replayPriced && replayCoinPrice > 0 ? 'Beli Replay via QRIS & Koin' : replayPriced ? 'Beli Replay via QRIS' : `Tukar ${replayCoinPrice} Koin untuk Replay`)
+                  : (showPriced && showCoinPrice > 0 ? 'Beli Show via QRIS & Koin' : showPriced ? 'Beli Show via QRIS' : `Tukar ${showCoinPrice} Koin untuk Show`)}
+              </Button>
+            )}
+            <Button asChild variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
+              <a href={adminWaLink(adminWa, `Halo admin, saya ingin akses ${replayMode ? 'replay' : 'live'} ${show.title} (${show.show_date}).`)} target="_blank" rel="noopener noreferrer">
+                {replayMode ? 'Hubungi Admin Untuk Akses Replay' : 'Hubungi Admin Untuk Akses Live'}
+              </a>
+            </Button>
+          </div>
+        ) : (
         <div className="pt-2 space-y-2">
           {isLiveNow && !(replayMode && (purchasedToken || membershipToken)) && (
             hasAccess ? (
@@ -335,6 +357,7 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
             </Button>
           ) : null}
         </div>
+        )}
       </div>
 
       {/* Inline replay player dialog */}
