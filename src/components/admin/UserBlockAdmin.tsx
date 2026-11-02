@@ -46,8 +46,12 @@ export default function UserBlockAdmin() {
   };
 
   const toggleMode = async (v: boolean) => {
-    if (await setSetting('maintenance_mode', v ? 'true' : 'false')) {
-      setMode(v); toast.success(v ? 'Mode Perbaikan aktif (kecuali halaman Live)' : 'Mode Perbaikan dimatikan');
+    // Mode Perbaikan tidak terhubung antar website: catat website yang menyalakannya
+    // agar website lain (A/B) yang memakai data sama tidak ikut tertutup.
+    const okMode = await setSetting('maintenance_mode', v ? 'true' : 'false');
+    const okOrigin = await setSetting('maintenance_origin', v ? window.location.origin : '');
+    if (okMode && okOrigin) {
+      setMode(v); toast.success(v ? `Mode Perbaikan aktif hanya di ${window.location.host} (halaman Live tetap terbuka)` : 'Mode Perbaikan dimatikan');
     }
   };
 
