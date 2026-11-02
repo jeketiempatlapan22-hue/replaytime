@@ -94,7 +94,8 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
 
   useEffect(() => {
     refresh();
-    const ch = supabase.channel(`live-chat-realtime${showId ? `:${showId}` : ''}`)
+    let liveOk = false;
+    const ch = supabase.channel(`live-chat-${showId || 'global'}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_messages' }, (payload) => {
         const m = payload.new as Msg;
         if (!inScope(m)) return;
@@ -135,8 +136,21 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
           setBlockedSet(new Set(((data || []) as { browser_id: string }[]).map(b => b.browser_id)));
         }
       )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+      .subscribe((status) => {
+        liveOk = status === 'SUBSCRIBED';
+        if (liveOk) refresh();
+      });
+    // Cadangan: kalau koneksi realtime putus, tetap sinkron tiap 5 detik.
+    const poll = window.setInterval(() => { if (!liveOk && !document.hidden) refresh(); }, 5000);
+    const onVis = () => { if (!document.hidden) refresh(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('online', onVis);
+    return () => {
+      window.clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('online', onVis);
+      supabase.removeChannel(ch);
+    };
   }, [isAdmin, messageLimit, myBrowserId, refresh, showId, inScope]);
 
   const handleScroll = () => {
@@ -237,7 +251,7 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
     setSending(true);
     const display = (name.trim() || 'Anonim').slice(0, 40);
     stickToBottomRef.current = true;
-    const { error } = await supabase.from('live_messages').insert({
+    const { data: inserted, error } = await supabase.from('live_messages').insert({
       browser_id: myBrowserId,
       name: isAdmin ? (adminUsername || 'Admin') : display,
       message: msg,
@@ -245,8 +259,14 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
       pinned: false,
       reply_to_id: replyTo?.id ?? null,
       show_id: showId || null,
-    });
-    if (!error) {
+    }).select().single();
+    if (error) {
+      try {
+        const { toast } = await import('@/hooks/use-toast');
+        toast({ title: 'Pesan gagal terkirim', description: 'Coba lagi sebentar.', variant: 'destructive' });
+      } catch { /* ignore */ }
+    } else {
+      if (inserted) setMessages(prev => prev.some(x => x.id === (inserted as Msg).id) ? prev : [...prev, inserted as Msg].slice(-messageLimit));
       recordSent(msg);
       setText('');
       setReplyTo(null);
