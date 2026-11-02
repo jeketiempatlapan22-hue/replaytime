@@ -1,6 +1,6 @@
 // Singkatan judul replay untuk Mode Kartu Ringkas.
 // Judul 3+ kata → huruf pertama tiap kata ("Cara Meminum Ramune" → CRM).
-// Judul 1–2 kata → huruf konsonan pertama tiap suku kata ("Pajama Drive" → PJMD).
+// Judul 1–2 kata → konsonan awal tiap suku kata kata pertama + huruf awal kata berikutnya ("Pajama Drive" → PJMD).
 const VOWEL = /[aiueo]/i;
 const STOP = new Set(['dan', 'di', 'ke', 'the', 'of', 'a', 'an', 'to']);
 
@@ -23,7 +23,7 @@ export function abbreviateTitle(title: string): string {
     const main = words.filter((w) => !STOP.has(w.toLowerCase()));
     return (main.length ? main : words).map((w) => w.replace(/[^a-z0-9]/gi, '').charAt(0)).join('').toUpperCase().slice(0, 6);
   }
-  return words.map(syllableConsonants).join('').toUpperCase().slice(0, 6);
+  return (syllableConsonants(words[0]) + words.slice(1).map((w) => w.replace(/[^a-z0-9]/gi, '').charAt(0)).join('')).toUpperCase().slice(0, 6);
 }
 
 export function displayShortTitle(r: { title: string; short_title?: string | null }): string {
