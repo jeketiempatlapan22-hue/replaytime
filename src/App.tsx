@@ -80,6 +80,7 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
           window.location.replace(url + location.hash);
           return;
         }
+        if (replayMatch) { window.location.replace(buildReplayHandoff(window.location.origin, r.replay_path, replayMatch[1])); return; }
       } catch { /* tetap tampil di sini */ }
       if (alive) setReady(true);
     })();
