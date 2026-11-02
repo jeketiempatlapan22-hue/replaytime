@@ -73,7 +73,7 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
         const rp = String(m.replay_path || 'rply').toLowerCase();
         const seg = path.replace(/^\/+|\/+$/g, '');
         const target = /^\/(live|tv)(\/|$)/.test(path) ? cleanOrigin(m.live_origin)
-          : seg === rp ? cleanOrigin(m.replay_origin)
+          : (seg === rp || seg === 'akses') ? cleanOrigin(m.replay_origin)
           : cleanOrigin(m.main_origin);
         if (target && bareHost(new URL(target).host) !== bareHost(window.location.host)) {
           window.location.replace(target + location.pathname + location.search + location.hash);
