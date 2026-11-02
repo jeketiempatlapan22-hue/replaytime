@@ -13,6 +13,7 @@ import { syncPurchases } from "@/lib/purchaseSync";
 import BottomNav from "./components/BottomNav";
 import MaintenanceGate from "./components/MaintenanceGate";
 import GuestOnboardBanner from "./components/GuestOnboardBanner";
+import { getSiteRouting, redirectsDisabled, crossTarget, withLiveCredentials, buildReplayHandoff } from "@/lib/siteRedirect";
 
 
 const Index = lazy(() => import("./pages/Index"));
@@ -54,11 +55,6 @@ async function getReplayPath(): Promise<string> {
 // replay_origin untuk path replay rahasia, main_origin untuk halaman pembayaran/lainnya.
 // Admin & reseller tidak dialihkan. Website A dan B memakai data yang sama, jadi
 // pengaturan yang sama berlaku di keduanya (tanpa loop karena host dibandingkan).
-const cleanOrigin = (v: unknown) => {
-  const raw = String(v || '').trim().replace(/\/+$/, '');
-  return /^https:\/\/[a-z0-9.-]+$/i.test(raw) ? raw.toLowerCase() : '';
-};
-const bareHost = (h: string) => h.toLowerCase().replace(/^www\./, '');
 function DomainRouter({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [ready, setReady] = useState(false);
@@ -66,24 +62,30 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
     let alive = true;
     (async () => {
       const path = location.pathname.toLowerCase();
-      if (/^\/(adpan|reseller)/.test(path) || /^(localhost|127\.)/.test(window.location.hostname) || window.location.hostname.endsWith('lovable.app')) { if (alive) setReady(true); return; }
+      if (/^\/(adpan|reseller)/.test(path) || redirectsDisabled()) { if (alive) setReady(true); return; }
       try {
-        const { data } = await supabase.from('site_settings').select('key,value').in('key', ['live_origin', 'replay_origin', 'main_origin', 'replay_path']);
-        const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-        const rp = String(m.replay_path || 'rply').toLowerCase();
+        const r = await getSiteRouting();
         const seg = path.replace(/^\/+|\/+$/g, '');
-        const target = /^\/(live|tv)(\/|$)/.test(path) ? cleanOrigin(m.live_origin)
-          : (seg === rp || seg === 'akses') ? cleanOrigin(m.replay_origin)
-          : cleanOrigin(m.main_origin);
-        if (target && bareHost(new URL(target).host) !== bareHost(window.location.host)) {
-          window.location.replace(target + location.pathname + location.search + location.hash);
+        const replayMatch = path.match(/^\/replay\/([^/]+)/);
+        const isLive = /^\/(live|tv)(\/|$)/.test(path);
+        const isReplay = !!replayMatch || seg === r.replay_path || seg === 'akses'
+          || (seg === '' && new URLSearchParams(location.search).has('replay'));
+        const target = crossTarget(isLive ? r.live_origin : isReplay ? r.replay_origin : r.main_origin);
+        if (target) {
+          let url: string;
+          if (isLive) url = target + location.pathname + withLiveCredentials(location.search);
+          else if (replayMatch) url = buildReplayHandoff(target, r.replay_path, replayMatch[1]);
+          else if (seg === '' && isReplay) url = target + '/' + r.replay_path + location.search;
+          else url = target + location.pathname + location.search;
+          window.location.replace(url + location.hash);
           return;
         }
+        if (replayMatch) { window.location.replace(buildReplayHandoff(window.location.origin, r.replay_path, replayMatch[1])); return; }
       } catch { /* tetap tampil di sini */ }
       if (alive) setReady(true);
     })();
     return () => { alive = false; };
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
   return ready ? <>{children}</> : <PageLoading />;
 }
 

@@ -508,6 +508,13 @@ function LiveInner() {
     const tParam = search.get('t');
     const mtParam = search.get('mtoken');
     if (adminMonitor && showId) { void doUnlock({ admin_monitor: true }, true); return; }
+    // Sandi dibawa dari Website A (halaman Kunci) saat pindah domain.
+    const pwParam = search.get('pw');
+    if (pwParam && !tParam && !mtParam) {
+      const next = new URLSearchParams(search); next.delete('pw');
+      window.history.replaceState({}, '', `/live${next.toString() ? `?${next}` : ''}`);
+      void doUnlock({ password: pwParam });
+    }
     let cached: string | null = null;
     try {
       cached = sessionStorage.getItem(`${SS_KEY_BASE}${showId?'-'+showId:''}`);

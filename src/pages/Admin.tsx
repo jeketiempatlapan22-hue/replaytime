@@ -1,3 +1,4 @@
+import { abbreviateTitle } from '@/lib/abbrev';
 import LiveMonitorAdmin from '@/components/admin/LiveMonitorAdmin';
 import GameAdmin from '@/components/admin/GameAdmin';
 import { useState, useEffect } from 'react';
@@ -81,7 +82,7 @@ export default function Admin() {
   const [editingReplay, setEditingReplay] = useState<ReplayRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ReplayRow | null>(null);
 
-  const [form, setForm] = useState({ title: '', showName: '', date: '', showTime: '19:00', criteria: 'reguler', featuredMember: '', lineup: '', password: '', adminAlias: '', youtubeId: '', youtubeAltId: '', imageUrl: '', sourceType: 'youtube', m3u8Url: '', sources: [] as PlaylistSource[], priceCoins: 1, priceIdr: 2000, imageFit: 'contain' });
+  const [form, setForm] = useState({ title: '', showName: '', date: '', showTime: '19:00', criteria: 'reguler', featuredMember: '', lineup: '', password: '', adminAlias: '', youtubeId: '', youtubeAltId: '', imageUrl: '', sourceType: 'youtube', m3u8Url: '', sources: [] as PlaylistSource[], priceCoins: 1, priceIdr: 2000, imageFit: 'contain', shortTitle: '' });
   const [liveChatEnabled, setLiveChatEnabled] = useState(true);
 
   const [mpYear, setMpYear] = useState(String(new Date().getFullYear()));
@@ -386,7 +387,7 @@ export default function Admin() {
   const handleLogout = async () => { await supabase.auth.signOut(); setIsLoggedIn(false); };
 
   const resetForm = () => {
-    setForm({ title: '', showName: '', date: '', showTime: '19:00', criteria: 'reguler', featuredMember: '', lineup: '', password: '', adminAlias: '', youtubeId: '', youtubeAltId: '', imageUrl: '', sourceType: 'youtube', m3u8Url: '', sources: [], priceCoins: 1, priceIdr: 2000, imageFit: 'contain' });
+    setForm({ title: '', showName: '', date: '', showTime: '19:00', criteria: 'reguler', featuredMember: '', lineup: '', password: '', adminAlias: '', youtubeId: '', youtubeAltId: '', imageUrl: '', sourceType: 'youtube', m3u8Url: '', sources: [], priceCoins: 1, priceIdr: 2000, imageFit: 'contain', shortTitle: '' });
     setEditingReplay(null);
   };
 
@@ -420,6 +421,7 @@ export default function Admin() {
       const payload = {
         title: form.title, show_name: form.showName, date: form.date, show_time: form.showTime + ':00', criteria: form.criteria,
         featured_member: showFeaturedMember ? form.featuredMember : '',
+        short_title: form.shortTitle.trim().toUpperCase(),
         lineup: lineupArr, password: form.password,
         admin_alias: form.adminAlias.trim(),
         youtube_id: normalizedYoutubeId,
@@ -459,6 +461,7 @@ export default function Admin() {
       priceCoins: ((r as any).price_coins ?? 1),
       priceIdr: ((r as any).price_idr ?? 2000),
       imageFit: ((r as any).image_fit as string) || 'contain',
+      shortTitle: ((r as any).short_title as string) || '',
     });
     setShowAddDialog(true);
   };
@@ -1527,6 +1530,7 @@ export default function Admin() {
           </DialogHeader>
           <div className="space-y-4">
             <div><Label>Judul *</Label><Input placeholder="Judul replay" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
+            <div><Label>Singkatan Judul (kartu ringkas)</Label><Input placeholder={`Otomatis: ${abbreviateTitle(form.title) || 'PJMD'}`} value={form.shortTitle} onChange={e => setForm(f => ({ ...f, shortTitle: e.target.value }))} /><p className="text-xs text-muted-foreground mt-1">Kosongkan untuk singkatan otomatis.</p></div>
             <div><Label>Nama Show</Label><Input placeholder="Contoh: Pajama Drive" value={form.showName} onChange={e => setForm(f => ({ ...f, showName: e.target.value }))} /></div>
             <div>
               <Label>Kriteria</Label>

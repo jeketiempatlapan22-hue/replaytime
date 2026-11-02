@@ -1,3 +1,5 @@
+import { useReplayDisplay } from '@/hooks/useReplayDisplay';
+import { displayShortTitle } from '@/lib/abbrev';
 import { ArrowLeft, Maximize, Minimize, Eye, Loader2, Lock, PictureInPicture2, ListVideo, Cast, Copy, MonitorSmartphone, Tv } from 'lucide-react';
 import { isFullscreenActive, isVideoFullscreen, onFullscreenChange, requestFs, exitFs, lockLandscape } from '@/lib/fullscreen';
 
@@ -53,6 +55,7 @@ function buildSources(source: ReplaySource | null, replay: ReplayRow): PlaylistS
 
 
 export default function YouTubePlayer({ replay, onBack }: Props) {
+  const { hideTitle } = useReplayDisplay();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTvMenu, setShowTvMenu] = useState(false);
   const [showTvConnect, setShowTvConnect] = useState(false);
@@ -245,6 +248,8 @@ export default function YouTubePlayer({ replay, onBack }: Props) {
       setPwInput('');
     } else if (res.reason === 'rate_limited') {
       setPwError('Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi.');
+    } else if (res.reason === 'source_hidden') {
+      setPwError('Sandi benar, tetapi replay ini sementara hanya bisa ditonton lewat link resmi dari admin.');
     } else if (res.reason === 'source_unavailable') {
       setPwError('Sandi benar, tetapi sumber video sedang tidak tersedia. Hubungi admin.');
     } else {
@@ -346,7 +351,7 @@ export default function YouTubePlayer({ replay, onBack }: Props) {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base sm:text-lg font-semibold truncate font-sans">{replay.title}</h1>
+          <h1 className="text-base sm:text-lg font-semibold truncate font-sans">{hideTitle ? displayShortTitle(replay as any) : replay.title}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{replay.criteria}</p>
         </div>
 

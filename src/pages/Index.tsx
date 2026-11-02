@@ -1,3 +1,4 @@
+import { redirectReplayIfNeeded } from '@/lib/siteRedirect';
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Search, X, SlidersHorizontal, ArrowUpDown, Bookmark, ArrowUp, Film, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -242,11 +243,15 @@ export default function Index() {
     try {
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
+      const pwParam = params.get('pw');
       const tokenReplay = params.get('replay');
-      if (token && tokenReplay) {
+      if ((token || pwParam) && tokenReplay) {
         const matched = allReplays.find(r => r.id === tokenReplay);
         if (matched) {
-          try { sessionStorage.setItem(`replaytime-tok-${tokenReplay}`, token); } catch { /* ignore */ }
+          try {
+            if (token) sessionStorage.setItem(`replaytime-tok-${tokenReplay}`, token);
+            else if (pwParam) sessionStorage.setItem(`replaytime-pw-${tokenReplay}`, pwParam);
+          } catch { /* ignore */ }
           setUnlockedIds(prev => prev.has(tokenReplay) ? prev : new Set(prev).add(tokenReplay));
           setDisplayedReplay(matched);
           setWatchingReplay(matched);
@@ -404,6 +409,10 @@ export default function Index() {
 
   // Atomic unlock + open player (prevents Chrome race condition)
   const handleUnlockAndWatch = useCallback((replay: ReplayRow) => {
+    void redirectReplayIfNeeded(replay.id).then((moved) => { if (!moved) openUnlocked(replay); });
+  }, []);
+
+  const openUnlocked = (replay: ReplayRow) => {
     try {
       sessionStorage.setItem(ACTIVE_REPLAY_STORAGE_KEY, replay.id);
     } catch {
@@ -414,9 +423,13 @@ export default function Index() {
     setDisplayedReplay(replay);
     setWatchingReplay(replay);
     setPlayerVisible(true);
-  }, []);
+  };
 
   const handleOpenPlayer = useCallback((replay: ReplayRow) => {
+    void redirectReplayIfNeeded(replay.id).then((moved) => { if (!moved) openPlayer(replay); });
+  }, []);
+
+  const openPlayer = (replay: ReplayRow) => {
     try {
       sessionStorage.setItem(ACTIVE_REPLAY_STORAGE_KEY, replay.id);
     } catch {
@@ -426,7 +439,7 @@ export default function Index() {
     setDisplayedReplay(replay);
     setWatchingReplay(replay);
     setPlayerVisible(true);
-  }, []);
+  };
 
   const handleClosePlayer = useCallback(() => {
     try {

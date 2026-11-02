@@ -1,3 +1,5 @@
+import { useReplayDisplay } from '@/hooks/useReplayDisplay';
+import { displayShortTitle } from '@/lib/abbrev';
 import { memo, useEffect, useState, useMemo } from 'react';
 import { Lock, Unlock, Play, Calendar, Users, Tag, Star, Tv, Bookmark, BookmarkCheck, ShoppingCart, Copy, Crown } from 'lucide-react';
 import { type ReplayRow, verifyPasswordDetailed } from '@/lib/store';
@@ -60,6 +62,7 @@ const getReplayPrice = (r: any) => {
 };
 
 function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAndWatch, index = 0, isBookmarked, onToggleBookmark, searchQuery = '', membership = null }: Props) {
+  const { compact, hideTitle } = useReplayDisplay();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -226,6 +229,7 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
   });
 
   const criteriaLabel = CRITERIA_LABELS[replay.criteria] || replay.criteria;
+  const shownTitle = hideTitle ? displayShortTitle(replay as any) : replay.title;
   // SECURITY: thumbnail uses uploaded image only — youtube_id is hidden
   // from the client until the user enters the correct password.
   const thumbnailUrl = replay.image_url ? thumbUrl(replay.image_url, 640, 60) : '/placeholder.svg';
@@ -237,13 +241,37 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
         className="group relative rounded-xl overflow-hidden border border-border bg-card/80 backdrop-blur-sm hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 animate-fade-up"
         style={{ animationDelay: `${Math.min(index, 3) * 35}ms`, animationFillMode: 'forwards', contentVisibility: 'auto', containIntrinsicSize: '420px' }}
       >
+        {compact ? (
+          <div className="relative p-3 pb-0 flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                {(criteriaLabel || replay.show_name) && <Badge variant="secondary" className="text-xs capitalize">{criteriaLabel || replay.show_name}</Badge>}
+                {isUnlocked ? (
+                  <Badge className="bg-primary/15 text-primary border-0"><Unlock className="w-3 h-3 mr-1" /> Terbuka</Badge>
+                ) : !isPurchased && !membershipCovered && (
+                  <Badge variant="outline" className="border-border"><Lock className="w-3 h-3 mr-1" /> Terkunci</Badge>
+                )}
+              </div>
+              <h3 className="text-2xl font-bold tracking-widest text-foreground font-sans">{shownTitle}</h3>
+            </div>
+            {onToggleBookmark && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onToggleBookmark(replay.id); }}
+                className={`p-1.5 rounded-full transition-all duration-200 ${isBookmarked ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-primary'}`}
+              >
+                {isBookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+              </button>
+            )}
+          </div>
+        ) : (
         <div className="relative aspect-video overflow-hidden bg-muted">
           {!imgLoaded && (
             <div className="absolute inset-0 bg-muted animate-pulse" aria-hidden />
           )}
           <img
             src={thumbnailUrl}
-            alt={replay.title}
+            alt={shownTitle}
             width={640}
             height={360}
             loading="lazy"
@@ -279,16 +307,17 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
               {isBookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
             </button>
           )}
-          <h3 className="absolute left-3 right-12 bottom-2 text-base sm:text-lg font-bold text-white line-clamp-2 font-sans drop-shadow">{highlightText(replay.title, searchQuery)}</h3>
+          <h3 className="absolute left-3 right-12 bottom-2 text-base sm:text-lg font-bold text-white line-clamp-2 font-sans drop-shadow">{hideTitle ? shownTitle : highlightText(replay.title, searchQuery)}</h3>
         </div>
+        )}
 
         <div className="p-3 space-y-2">
           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <span className="inline-flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary" />{formattedDate}</span>
-            {replay.show_name && (
+            {!compact && replay.show_name && (
               <span className="inline-flex items-center gap-1.5"><Tv className="w-3.5 h-3.5 text-primary" />{highlightText(replay.show_name, searchQuery)}</span>
             )}
-            {replay.featured_member && (
+            {!compact && replay.featured_member && (
               <span className="inline-flex items-center gap-1.5"><Star className="w-3.5 h-3.5 text-primary" />{highlightText(replay.featured_member, searchQuery)}</span>
             )}
           </div>
@@ -311,7 +340,9 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
               <ul className="flex gap-2 w-max py-1 list-none m-0 p-0">
                 {replay.lineup.map((member, i) => (
                   <li key={i} className="snap-start">
-                    <MemberAvatar name={member} size={40} />
+                    {compact
+                      ? <span className="inline-block rounded-full bg-muted px-2.5 py-1 text-xs text-foreground whitespace-nowrap">{member}</span>
+                      : <MemberAvatar name={member} size={40} />}
                   </li>
                 ))}
               </ul>
