@@ -100,3 +100,10 @@ export async function redirectReplayIfNeeded(replayId: string): Promise<boolean>
   window.location.assign(buildReplayHandoff(target, r.replay_path, replayId));
   return true;
 }
+
+/** Pengaturan tampilan replay untuk website yang sedang dibuka. */
+export function replayDisplayFlags(r: SiteRouting, currentHost = window.location.host) {
+  const onReplaySite = !!r.replay_origin && !crossTarget(r.replay_origin, currentHost);
+  const hideTitle = r.compact_replay_cards || (r.hide_youtube_on_main && !onReplaySite);
+  return { compact: r.compact_replay_cards, hideTitle };
+}
