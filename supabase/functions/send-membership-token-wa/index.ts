@@ -52,7 +52,7 @@ async function sendFonnte(phone: string, message: string) {
 }
 
 const DEFAULT_TPL =
-  '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtimestream.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
+  '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtime48show.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
 
 function buildMessage(tpl: string, v: Record<string, string>) {
   return tpl
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     const { data: settings } = await admin
       .from('site_settings').select('key,value').in('key', ['site_origin', 'wa_membership_template']);
     const sm = new Map((settings ?? []).map((s) => [s.key, s.value]));
-    const origin = (sm.get('site_origin') || 'https://realtimestream.my.id').replace(/\/+$/, '');
+    const origin = (sm.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
     const tpl = sm.get('wa_membership_template') || DEFAULT_TPL;
 
     const link = `${origin}/live?mtoken=${encodeURIComponent(tk.token)}&mp=${encodeURIComponent(tk.password)}`;

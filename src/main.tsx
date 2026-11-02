@@ -4,11 +4,11 @@ import "./index.css";
 import { registerServiceWorker } from "./lib/pwa";
 
 // Redirect ke domain utama (mempertahankan path + query + hash supaya token tetap berfungsi)
-const PRIMARY_HOST = 'realtimestream.my.id';
+const PRIMARY_HOST = 'realtime48show.my.id';
 const OLD_HOST = 'realtime48stream.my.id';
 const REDIRECT_HOSTS = new Set([
   'replaytime.lovable.app',
-  'www.realtimestream.my.id',
+  'www.realtime48show.my.id',
   OLD_HOST,
   `www.${OLD_HOST}`,
 ]);

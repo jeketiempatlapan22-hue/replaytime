@@ -448,7 +448,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
             </Button>
           )}
           <Button size="sm" variant="outline" onClick={() => {
-            navigator.clipboard.writeText(`https://realtimestream.my.id/free?show=${showId}`);
+            navigator.clipboard.writeText(`https://realtime48show.my.id/free?show=${showId}`);
             toast({ title: 'Link /free disalin' });
           }}>
             Salin link /free

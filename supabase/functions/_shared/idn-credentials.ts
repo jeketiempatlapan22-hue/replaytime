@@ -44,8 +44,8 @@ export async function generateApiToken(showId: string, _ttlSec = API_TOKEN_TTL):
 }
 
 export const ALLOWED_ORIGINS = [
-  'https://realtimestream.my.id',
-  'https://www.realtimestream.my.id',
+  'https://realtime48show.my.id',
+  'https://www.realtime48show.my.id',
   'https://realtime48stream.my.id',
   'https://www.realtime48stream.my.id',
   'https://replaytime.lovable.app',

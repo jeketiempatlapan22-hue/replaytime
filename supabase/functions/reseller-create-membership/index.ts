@@ -31,7 +31,7 @@ async function freshToken(admin: any, len: number) {
 }
 
 const DEFAULT_TPL =
-  '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtimestream.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
+  '👑 *MEMBERSHIP AKTIF*\n\n📦 *{package_name}*\n📅 Berlaku hingga: {expires_at}\n\n🔗 *Link Akses:*\n{link}\n\n🎬 *Link Replay:* realtime48show.my.id\n\n{replay_info_block}👤 Berlaku untuk *{max_devices} perangkat*.\n\n— *ReplayTime* 💖';
 
 function build(tpl: string, v: Record<string, string>) {
   return tpl
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   const { data: settings } = await admin.from('site_settings').select('key,value')
     .in('key', ['site_origin', 'wa_membership_template']);
   const sm = new Map((settings ?? []).map((x: any) => [x.key, x.value]));
-  const origin = ((sm.get('site_origin') as string) || 'https://realtimestream.my.id').replace(/\/+$/, '');
+  const origin = ((sm.get('site_origin') as string) || 'https://realtime48show.my.id').replace(/\/+$/, '');
   const tpl = (sm.get('wa_membership_template') as string) || DEFAULT_TPL;
   // Info replay reseller = info replay paket yang diatur admin (disatukan).
   const replayInfo = String(pkg.replay_info || '');

@@ -20,7 +20,7 @@ import {
 
 type Admin = ReturnType<typeof createClient>;
 
-const SITE = 'https://realtimestream.my.id';
+const SITE = 'https://realtime48show.my.id';
 
 /** Masa berlaku QRIS yang ditampilkan di Telegram. */
 const QR_TTL_MS = 5 * 60 * 1000;

@@ -133,7 +133,7 @@ export default function ShowLiveTokensDialog({ open, onOpenChange, showId, showT
   };
 
   const copyLink = async (token: string) => {
-    const url = `https://realtimestream.my.id/live?show=${showId}&t=${token}`;
+    const url = `https://realtime48show.my.id/live?show=${showId}&t=${token}`;
     const copied = await copyToClipboard(url);
     toast({ title: copied ? 'Link tersalin' : 'Tidak bisa menyalin otomatis', description: copied ? undefined : 'Buka info akses di bawah untuk menyalin manual.' });
   };

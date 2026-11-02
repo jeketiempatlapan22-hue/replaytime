@@ -28,7 +28,7 @@ type Pkg = {
   max_devices: number; includes_replays: boolean; replay_info: string;
 };
 
-const SITE = 'https://realtimestream.my.id';
+const SITE = 'https://realtime48show.my.id';
 
 function normPhone(raw: string) {
   const d = String(raw || '').replace(/\D/g, '');
