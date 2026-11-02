@@ -96,7 +96,7 @@ export async function redirectReplayIfNeeded(replayId: string): Promise<boolean>
   if (redirectsDisabled()) return false;
   const r = await getSiteRouting();
   const target = crossTarget(r.replay_origin);
-  if (!target) return false;
+  if (!target || replayLocked(r)) return false;
   window.location.assign(buildReplayHandoff(target, r.replay_path, replayId));
   return true;
 }
@@ -105,5 +105,12 @@ export async function redirectReplayIfNeeded(replayId: string): Promise<boolean>
 export function replayDisplayFlags(r: SiteRouting, currentHost = window.location.host) {
   const onReplaySite = !!r.replay_origin && !crossTarget(r.replay_origin, currentHost);
   const hideTitle = r.compact_replay_cards || (r.hide_youtube_on_main && !onReplaySite);
-  return { compact: r.compact_replay_cards, hideTitle };
+  return { compact: r.compact_replay_cards, hideTitle, locked: replayLocked(r) };
+}
+
+/** Kartu ringkas + YouTube disembunyikan = replay dikunci (Hubungi Admin), kecuali di path rahasia. */
+export function replayLocked(r: SiteRouting, pathname = typeof window !== 'undefined' ? window.location.pathname : '/'): boolean {
+  if (!r.compact_replay_cards || !r.hide_youtube_on_main) return false;
+  const seg = pathname.toLowerCase().replace(/^\/+|\/+$/g, '').split('/')[0];
+  return seg !== r.replay_path;
 }

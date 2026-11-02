@@ -1,3 +1,4 @@
+import { abbreviateTitle } from '@/lib/abbrev';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -119,6 +120,7 @@ export default function BulkShowImport({ onImported }: Props) {
           show_time: s.show_time,
           lineup: s.lineup,
           admin_alias: s.admin_alias || null,
+          short_title: ((s as any).short_title?.trim() || abbreviateTitle(s.title)).toUpperCase(),
           live_password: s.live_password || '',
           price_show: s.price_show || 0,
           price_replay: s.price_replay || 0,
@@ -229,6 +231,13 @@ export default function BulkShowImport({ onImported }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">{s.title}</p>
+                      <Input
+                        value={(s as any).short_title ?? abbreviateTitle(s.title)}
+                        onChange={e => updateRow(idx, { short_title: e.target.value.toUpperCase().slice(0, 12) } as any)}
+                        placeholder="Singkatan"
+                        className="h-7 w-28 text-[11px] mt-1"
+                        aria-label="Singkatan judul"
+                      />
                       <p className="text-xs text-muted-foreground">
                         📅 {s.show_date} · 🕒 {s.show_time.slice(0, 5)}
                         {s.lineup.length > 0 && ` · 👥 ${s.lineup.length}`}

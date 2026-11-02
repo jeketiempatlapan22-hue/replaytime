@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSiteRouting, replayDisplayFlags } from '@/lib/siteRedirect';
 
-let last = { compact: false, hideTitle: false };
+let last = { compact: false, hideTitle: false, locked: false };
 
 /** Mode Kartu Ringkas & sembunyikan judul (diatur admin, bisa dikembalikan). */
 export function useReplayDisplay() {

@@ -13,7 +13,7 @@ import { syncPurchases } from "@/lib/purchaseSync";
 import BottomNav from "./components/BottomNav";
 import MaintenanceGate from "./components/MaintenanceGate";
 import GuestOnboardBanner from "./components/GuestOnboardBanner";
-import { getSiteRouting, redirectsDisabled, crossTarget, withLiveCredentials, buildReplayHandoff } from "@/lib/siteRedirect";
+import { getSiteRouting, redirectsDisabled, crossTarget, replayLocked, withLiveCredentials, buildReplayHandoff } from "@/lib/siteRedirect";
 
 
 const Index = lazy(() => import("./pages/Index"));
@@ -70,7 +70,9 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
         const isLive = /^\/(live|tv)(\/|$)/.test(path);
         const isReplay = !!replayMatch || seg === r.replay_path || seg === 'akses'
           || (seg === '' && new URLSearchParams(location.search).has('replay'));
-        const target = crossTarget(isLive ? r.live_origin : isReplay ? r.replay_origin : r.main_origin);
+        // Replay dikunci (Hubungi Admin): jangan pindahkan ke Website B kecuali dari path rahasia.
+        const lockedHere = isReplay && seg !== r.replay_path && replayLocked(r, location.pathname);
+        const target = lockedHere ? '' : crossTarget(isLive ? r.live_origin : isReplay ? r.replay_origin : r.main_origin);
         if (target) {
           let url: string;
           if (isLive) url = target + location.pathname + withLiveCredentials(location.search);
@@ -80,6 +82,7 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
           window.location.replace(url + location.hash);
           return;
         }
+        if (replayMatch && lockedHere) { window.location.replace('/'); return; }
         if (replayMatch) { window.location.replace(buildReplayHandoff(window.location.origin, r.replay_path, replayMatch[1])); return; }
       } catch { /* tetap tampil di sini */ }
       if (alive) setReady(true);

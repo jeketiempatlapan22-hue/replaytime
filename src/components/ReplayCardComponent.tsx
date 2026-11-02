@@ -1,4 +1,6 @@
 import { useReplayDisplay } from '@/hooks/useReplayDisplay';
+import { useAdminWa } from '@/hooks/useAdminWa';
+import { adminWaLink } from '@/lib/adminWa';
 import { displayShortTitle } from '@/lib/abbrev';
 import { memo, useEffect, useState, useMemo } from 'react';
 import { Lock, Unlock, Play, Calendar, Users, Tag, Star, Tv, Bookmark, BookmarkCheck, ShoppingCart, Copy, Crown } from 'lucide-react';
@@ -62,7 +64,8 @@ const getReplayPrice = (r: any) => {
 };
 
 function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAndWatch, index = 0, isBookmarked, onToggleBookmark, searchQuery = '', membership = null }: Props) {
-  const { compact, hideTitle } = useReplayDisplay();
+  const { compact, hideTitle, locked } = useReplayDisplay();
+  const adminWa = useAdminWa();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -349,7 +352,22 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
             </div>
           </div>
 
-          {membershipCovered ? (
+          {locked ? (
+            <div className="space-y-2 pt-1">
+              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-center text-xs font-semibold text-primary">
+                Hubungi Admin Untuk Akses Replay
+              </div>
+              <Button asChild className="w-full">
+                <a
+                  href={adminWaLink(adminWa, `Halo admin, saya ingin akses replay ${displayShortTitle(replay as any)} (${replay.date}).`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Hubungi Admin
+                </a>
+              </Button>
+            </div>
+          ) : membershipCovered ? (
             <div className="space-y-2 pt-1">
               <Button type="button" className="w-full" onClick={watchWithMembership}>
                 <Play className="w-4 h-4 mr-2" /> Tonton Replay

@@ -1,4 +1,4 @@
-import { redirectReplayIfNeeded } from '@/lib/siteRedirect';
+import { redirectReplayIfNeeded, getSiteRouting, replayLocked } from '@/lib/siteRedirect';
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Search, X, SlidersHorizontal, ArrowUpDown, Bookmark, ArrowUp, Film, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -236,8 +236,12 @@ export default function Index() {
     }
   }, [unlockedIds]);
 
+  const lockedRef = useRef<boolean | null>(null);
+  const [lockReady, setLockReady] = useState(false);
+  useEffect(() => { getSiteRouting().then((r) => { lockedRef.current = replayLocked(r); setLockReady(true); }); }, []);
+
   useEffect(() => {
-    if (loading || allReplays.length === 0 || displayedReplay) return;
+    if (loading || !lockReady || allReplays.length === 0 || displayedReplay) return;
 
     // 1) Token URL: ?token=...&replay=...
     try {
@@ -246,6 +250,7 @@ export default function Index() {
       const pwParam = params.get('pw');
       const tokenReplay = params.get('replay');
       if ((token || pwParam) && tokenReplay) {
+        if (lockedRef.current) { window.history.replaceState({}, '', window.location.pathname); return; }
         const matched = allReplays.find(r => r.id === tokenReplay);
         if (matched) {
           try {
@@ -267,7 +272,7 @@ export default function Index() {
     // Bersihkan sisa state player lama agar halaman / tidak pernah blank
     // karena overlay player ter-restore dalam keadaan kosong/gagal.
     try { sessionStorage.removeItem(ACTIVE_REPLAY_STORAGE_KEY); } catch { /* ignore */ }
-  }, [allReplays, displayedReplay, loading]);
+  }, [allReplays, displayedReplay, loading, lockReady]);
 
   // Scroll-to-top visibility
   useEffect(() => {

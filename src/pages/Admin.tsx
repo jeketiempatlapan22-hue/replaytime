@@ -139,16 +139,16 @@ export default function Admin() {
 
   // Active shows state
   const [activeShows, setActiveShows] = useState<ActiveShow[]>([]);
-  const [showForm, setShowForm] = useState<{ id?: string; title: string; show_date: string; show_time: string; lineup: string; category: string; featured_member: string; description: string; image_url: string; sort_order: number; is_active: boolean; is_special: boolean; price_show: number; price_replay: number; price_show_coins: number; price_replay_coins: number; pakasir_amount: number; replay_id: string; replay_enabled: boolean; admin_alias: string }>({
+  const [showForm, setShowForm] = useState<{ id?: string; title: string; show_date: string; show_time: string; lineup: string; category: string; featured_member: string; description: string; image_url: string; sort_order: number; is_active: boolean; is_special: boolean; price_show: number; price_replay: number; price_show_coins: number; price_replay_coins: number; pakasir_amount: number; replay_id: string; replay_enabled: boolean; admin_alias: string; short_title: string }>({
     title: '', show_date: '', show_time: '19:00', lineup: '', category: 'reguler', featured_member: '', description: '', image_url: '', sort_order: 0, is_active: true, is_special: false,
-    price_show: 0, price_replay: 0, price_show_coins: 0, price_replay_coins: 0, pakasir_amount: 0, replay_id: '', replay_enabled: false, admin_alias: '',
+    price_show: 0, price_replay: 0, price_show_coins: 0, price_replay_coins: 0, pakasir_amount: 0, replay_id: '', replay_enabled: false, admin_alias: '', short_title: '',
   });
   const [showEditing, setShowEditing] = useState(false);
 
   const refreshActiveShows = () => getActiveShows(true).then(setActiveShows);
 
   const resetShowForm = () => {
-    setShowForm({ title: '', show_date: '', show_time: '19:00', lineup: '', category: 'reguler', featured_member: '', description: '', image_url: '', sort_order: 0, is_active: true, is_special: false, price_show: 0, price_replay: 0, price_show_coins: 0, price_replay_coins: 0, pakasir_amount: 0, replay_id: '', replay_enabled: false, admin_alias: '' });
+    setShowForm({ title: '', show_date: '', show_time: '19:00', lineup: '', category: 'reguler', featured_member: '', description: '', image_url: '', sort_order: 0, is_active: true, is_special: false, price_show: 0, price_replay: 0, price_show_coins: 0, price_replay_coins: 0, pakasir_amount: 0, replay_id: '', replay_enabled: false, admin_alias: '', short_title: '' });
     setShowEditing(false);
   };
 
@@ -179,6 +179,7 @@ export default function Admin() {
         replay_id: showForm.replay_id || null,
         replay_enabled: showForm.replay_enabled,
         admin_alias: showForm.admin_alias.trim().toLowerCase() || null,
+        short_title: (showForm.short_title.trim() || abbreviateTitle(showForm.title)).toUpperCase(),
       } as any);
       toast({ title: showForm.id ? 'Show diperbarui' : 'Show ditambahkan' });
       resetShowForm();
@@ -199,6 +200,7 @@ export default function Admin() {
       pakasir_amount: s.pakasir_amount ?? 0, replay_id: s.replay_id ?? '',
       replay_enabled: s.replay_enabled ?? false,
       admin_alias: (s as any).admin_alias ?? '',
+      short_title: (s as any).short_title ?? '',
     });
     setShowEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -904,6 +906,11 @@ export default function Admin() {
                 <div>
                   <Label>Deskripsi</Label>
                   <Input value={showForm.description} onChange={e => setShowForm({ ...showForm, description: e.target.value })} placeholder="Deskripsi singkat show" />
+                </div>
+                <div>
+                  <Label>Singkatan Judul (kartu replay ringkas)</Label>
+                  <Input value={showForm.short_title} onChange={e => setShowForm({ ...showForm, short_title: e.target.value.toUpperCase().slice(0, 12) })} placeholder={abbreviateTitle(showForm.title) || 'contoh: PJMD'} />
+                  <p className="text-[11px] text-muted-foreground mt-1">Kosongkan = otomatis ({abbreviateTitle(showForm.title) || '-'}). Ikut ke replay saat show dijadikan replay.</p>
                 </div>
                 <div>
                   <Label>Alias Admin (untuk command bot)</Label>
