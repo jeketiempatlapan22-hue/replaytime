@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Search, Ban, Wrench, Unlock } from 'lucide-react';
+import { bareMaintHost, isMaintenanceHere, maintenanceKey } from '@/lib/maintenance';
 
 type Found = { user_id: string; email: string; username: string | null; phone: string | null; created_at: string; blocked: boolean; block_reason: string | null };
 type BlockedRow = { id: string; user_id: string | null; phone: string; email: string; reason: string; created_at: string };
@@ -28,9 +29,10 @@ export default function UserBlockAdmin() {
   const [busy, setBusy] = useState(false);
 
   const loadAll = async () => {
-    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin', 'hide_youtube_on_main', 'compact_replay_cards']);
+    const host = window.location.host;
+    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_origin', maintenanceKey(host), 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin', 'hide_youtube_on_main', 'compact_replay_cards']);
     const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-    setMode(m.maintenance_mode === 'true'); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || ''); setHideYt(m.hide_youtube_on_main === 'true'); setCompact(m.compact_replay_cards === 'true');
+    setMode(isMaintenanceHere(m, host)); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || ''); setHideYt(m.hide_youtube_on_main === 'true'); setCompact(m.compact_replay_cards === 'true');
     const { data: b } = await supabase.from('blocked_users').select('id,user_id,phone,email,reason,created_at').eq('active', true).order('created_at', { ascending: false });
     setBlocked((b || []) as BlockedRow[]);
   };
@@ -46,12 +48,17 @@ export default function UserBlockAdmin() {
   };
 
   const toggleMode = async (v: boolean) => {
-    // Mode Perbaikan tidak terhubung antar website: catat website yang menyalakannya
-    // agar website lain (A/B) yang memakai data sama tidak ikut tertutup.
-    const okMode = await setSetting('maintenance_mode', v ? 'true' : 'false');
-    const okOrigin = await setSetting('maintenance_origin', v ? window.location.origin : '');
-    if (okMode && okOrigin) {
-      setMode(v); toast.success(v ? `Mode Perbaikan aktif hanya di ${window.location.host} (halaman Live tetap terbuka)` : 'Mode Perbaikan dimatikan');
+    // Saklar terpisah per website: menyalakan/mematikan di sini tidak mengubah website lain.
+    const host = window.location.host;
+    const ok = await setSetting(maintenanceKey(host), v ? 'true' : 'false');
+    // Matikan saklar lama bila menunjuk ke website ini, agar tidak menimpa saklar baru.
+    const { data: legacy } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_origin']);
+    const lm = Object.fromEntries((legacy || []).map((r) => [r.key, r.value]));
+    if (!v && lm.maintenance_mode === 'true' && isMaintenanceHere({ maintenance_mode: 'true', maintenance_origin: lm.maintenance_origin }, host)) {
+      await setSetting('maintenance_mode', 'false');
+    }
+    if (ok) {
+      setMode(v); toast.success(v ? `Mode Perbaikan aktif hanya di ${bareMaintHost(host)} (halaman Live tetap terbuka)` : `Mode Perbaikan dimatikan di ${bareMaintHost(host)}`);
     }
   };
 

@@ -354,7 +354,15 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
 
           {locked ? (
             <div className="space-y-2 pt-1">
-              {isPurchased ? (
+              {membershipCovered && !isPurchased ? (
+                <Button type="button" className="w-full" onClick={() => {
+                  if (membership?.token) { try { sessionStorage.setItem(`replaytime-tok-${replay.id}`, membership.token); } catch { /* ignore */ } }
+                  // /replay/:id dipindah ke Website B (replay_origin) dengan token membership.
+                  window.location.assign(`/replay/${replay.id}`);
+                }}>
+                  <Play className="w-4 h-4 mr-2" /> Tonton Replay (Member)
+                </Button>
+              ) : isPurchased ? (
                 <AccessInfoCard token={purchasedToken} replayId={replay.id} fallbackLink={accessLink} compact />
               ) : (
                 <>
@@ -367,6 +375,9 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
                   <Button type="button" className="w-full gap-2" onClick={() => setBuyOpen(true)}>
                     <ShoppingCart className="w-4 h-4" />
                     {((replay as any).price_coins ?? 0) > 0 ? 'Beli Replay via QRIS & Koin' : 'Beli Replay via QRIS'}
+                  </Button>
+                  <Button type="button" variant="secondary" className="w-full gap-2" onClick={() => window.location.assign(`/replay/${replay.id}`)}>
+                    <Lock className="w-4 h-4" /> Masukkan Sandi
                   </Button>
                 </>
               )}
