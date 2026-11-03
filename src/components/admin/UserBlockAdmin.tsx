@@ -29,9 +29,10 @@ export default function UserBlockAdmin() {
   const [busy, setBusy] = useState(false);
 
   const loadAll = async () => {
-    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin', 'hide_youtube_on_main', 'compact_replay_cards']);
+    const host = window.location.host;
+    const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_origin', maintenanceKey(host), 'maintenance_message', 'replay_path', 'live_origin', 'main_origin', 'replay_origin', 'link_origin', 'hide_youtube_on_main', 'compact_replay_cards']);
     const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-    setMode(m.maintenance_mode === 'true'); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || ''); setHideYt(m.hide_youtube_on_main === 'true'); setCompact(m.compact_replay_cards === 'true');
+    setMode(isMaintenanceHere(m, host)); setMsg(m.maintenance_message || ''); setReplayHost(m.replay_path || 'rply'); setLiveOrigin(m.live_origin || ''); setMainOrigin(m.main_origin || ''); setReplayOrigin(m.replay_origin || ''); setLinkOrigin(m.link_origin || ''); setHideYt(m.hide_youtube_on_main === 'true'); setCompact(m.compact_replay_cards === 'true');
     const { data: b } = await supabase.from('blocked_users').select('id,user_id,phone,email,reason,created_at').eq('active', true).order('created_at', { ascending: false });
     setBlocked((b || []) as BlockedRow[]);
   };
