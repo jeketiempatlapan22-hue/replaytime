@@ -35,6 +35,7 @@ interface MyMembership {
   token: string | null;
   password: string | null;
   expires_at: string | null;
+  starts_at?: string | null;
   duration_days: number | null;
   max_devices: number | null;
   days_remaining: number | null;
@@ -157,7 +158,12 @@ export default function Profil() {
     const load = async () => {
       setMemLoading(true);
       const { data, error } = await supabase.rpc('get_my_memberships' as any);
-      if (!error && Array.isArray(data)) setMemberships(data as any);
+      if (!error && Array.isArray(data)) {
+        setMemberships(data as any);
+        // Buka otomatis membership aktif pertama agar sandi & link langsung terlihat.
+        const act = (data as any[]).find((r) => r?.status === 'paid' && !r?.revoked && r?.token && (!r?.expires_at || new Date(r.expires_at).getTime() > Date.now()));
+        if (act) setOpenMem((cur) => cur ?? act.order_id);
+      }
       setMemLoading(false);
     };
     void load();
