@@ -12,3 +12,5 @@
 - Gate YouTube sources server-side in get-replay-source via site_settings.hide_youtube_on_main (only replay_origin receives them) and gate compact cards via compact_replay_cards, so both modes are reversible without touching replay data.
 - In lock mode (compact_replay_cards + hide_youtube_on_main, via replayLocked()), replay and show cards keep QRIS/coin purchase but replace password/watch buttons with a contact-admin link; purchased links still redirect to replay_origin, so sales continue while sources stay hidden.
 - Keep short titles on active_shows.short_title and copy them to replays in convert_show_to_replay plus a sync trigger, so admins set abbreviations once at show entry.
+- Store Maintenance Mode per domain in site_settings `maintenance_mode:<host without www>` via src/lib/maintenance.ts (legacy maintenance_mode+maintenance_origin only read), so Website A and B toggle independently while access rules stay shared.
+- get_my_memberships also returns membership_tokens whose phone matches the user's profile phone, so admin/reseller-made memberships unlock watch buttons on the account.
