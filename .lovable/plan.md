@@ -4,6 +4,11 @@
 Saat ini mode perbaikan sudah mencatat website yang menyalakannya, jadi hanya website itu yang tertutup. Yang akan ditambahkan:
 - Jika admin mematikan mode perbaikan di satu website, website lain tidak ikut terpengaruh.
 - Aturan akses live dan replay tetap saling terhubung antar website A dan B untuk semua cara masuk: link token satuan, bundle, membership, sandi satuan, dan sandi bulanan. Aturan ini tidak diubah, hanya dipastikan lewat pengecekan otomatis.
+- Teknis: saat ini hanya ada satu saklar perbaikan bersama (website terakhir yang menyalakan menimpa yang lain). Akan dibuat saklar terpisah per website, sehingga A dan B bisa on/off sendiri-sendiri.
+
+## 1b. Semua menu bisa dibuka di Website A dan B (menu Show tidak terbuka)
+- Pengaturan saat ini: halaman Show tidak diarahkan ke website lain (domain utama kosong), jadi penyebabnya belum pasti. Langkah pertama: buka menu Show di pratinjau dan di kedua domain, catat error yang muncul, lalu perbaiki penyebab sebenarnya.
+- Setelah itu, cek satu per satu semua menu (Beranda, Show, Replay, Membership, Koin, Game, Profil, Panduan, Live) di A dan B agar terbuka tanpa layar kosong atau muter terus.
 
 ## 2. Member langsung dapat tombol Tonton (tidak disuruh beli lagi)
 Penyebab yang ditemukan:
