@@ -6,9 +6,10 @@ import { registerServiceWorker } from "./lib/pwa";
 // Redirect ke domain utama (mempertahankan path + query + hash supaya token tetap berfungsi)
 const PRIMARY_HOST = 'realtime48show.my.id';
 const OLD_HOSTS = ['realtime48stream.my.id', 'realtimestream.my.id'];
+// Jangan alihkan www.<domain utama>: hosting sudah mengalihkan domain utama ke www,
+// sehingga mengalihkan balik ke tanpa-www membuat halaman memuat ulang tanpa henti.
 const REDIRECT_HOSTS = new Set([
   'replaytime.lovable.app',
-  `www.${PRIMARY_HOST}`,
   ...OLD_HOSTS,
   ...OLD_HOSTS.map((h) => `www.${h}`),
 ]);
