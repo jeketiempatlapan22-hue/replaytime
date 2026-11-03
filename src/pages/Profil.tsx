@@ -451,6 +451,27 @@ export default function Profil() {
 
                         {isPaid && link && !tokenExpired && !m.revoked && (
                           <div className="space-y-1.5">
+                            <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5 text-[11px]">
+                              <div>
+                                <span className="text-muted-foreground">Durasi: </span>
+                                <span className="font-semibold text-foreground">
+                                  {m.duration_days ? `${m.duration_days} hari` : '-'}
+                                  {m.starts_at && ` · ${new Date(m.starts_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                                  {m.expires_at && ` s/d ${new Date(m.expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                                  {` · sisa ${m.days_remaining ?? 0} hari`}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-muted-foreground shrink-0">Sandi:</span>
+                                <code className="flex-1 min-w-0 truncate select-all font-mono font-bold text-primary">{m.password}</code>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => copyText(m.password!, 'Sandi disalin')}><Copy className="w-3 h-3" /></Button>
+                              </div>
+                              <div className="flex items-start gap-1.5">
+                                <span className="text-muted-foreground shrink-0">Link:</span>
+                                <code className="flex-1 min-w-0 break-all select-all font-mono text-foreground">{link}</code>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => copyText(link, 'Link disalin')}><Copy className="w-3 h-3" /></Button>
+                              </div>
+                            </div>
                             <div className="grid grid-cols-3 gap-1.5">
                               <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => copyText(link, 'Link disalin')}>
                                 <Copy className="w-3 h-3 mr-1" /> Link
