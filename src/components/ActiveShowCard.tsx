@@ -381,6 +381,12 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
                 : `Tukar ${showCoinPrice} Koin untuk Show`}
             </Button>
           ) : null}
+          {/* Sandi satuan/bulanan/bundle untuk show belum tayang atau replay */}
+          {!hasAccess && !purchasedToken && !membershipToken && !(isLiveNow && !replayMode) && (
+            <Button variant="secondary" className="w-full gap-2" onClick={goPassword}>
+              <Lock className="w-4 h-4" /> Masukkan Sandi
+            </Button>
+          )}
         </div>
         )}
       </div>
