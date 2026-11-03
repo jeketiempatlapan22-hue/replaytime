@@ -13,7 +13,7 @@ import { syncPurchases } from "@/lib/purchaseSync";
 import BottomNav from "./components/BottomNav";
 import MaintenanceGate from "./components/MaintenanceGate";
 import GuestOnboardBanner from "./components/GuestOnboardBanner";
-import { getSiteRouting, redirectsDisabled, crossTarget, replayLocked, withLiveCredentials, buildReplayHandoff } from "@/lib/siteRedirect";
+import { getSiteRouting, redirectsDisabled, crossTarget, replayLocked, withLiveCredentials, buildReplayHandoff, isLocalSecretReplay } from "@/lib/siteRedirect";
 
 
 const Index = lazy(() => import("./pages/Index"));
@@ -65,6 +65,10 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
       if (/^\/(adpan|reseller)/.test(path) || redirectsDisabled()) { if (alive) setReady(true); return; }
       try {
         const r = await getSiteRouting();
+        if (isLocalSecretReplay(r, location.pathname, location.search)) {
+          if (alive) setReady(true);
+          return;
+        }
         const seg = path.replace(/^\/+|\/+$/g, '');
         const replayMatch = path.match(/^\/replay\/([^/]+)/);
         const isLive = /^\/(live|tv)(\/|$)/.test(path);

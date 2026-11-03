@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { withLiveCredentials, buildReplayHandoff, crossTarget, stashLivePassword } from './siteRedirect';
+import { withLiveCredentials, buildReplayHandoff, crossTarget, stashLivePassword, isLocalSecretReplay } from './siteRedirect';
 
 describe('site redirect handoff', () => {
   beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
@@ -31,5 +31,20 @@ describe('replayLocked', () => {
   });
   it('never locks the secret replay path', () => {
     expect(replayLocked(both, '/rply')).toBe(false);
+  });
+});
+
+describe('direct secret replay access', () => {
+  const routing = pr([{ key: 'replay_path', value: 'rply' }, { key: 'replay_origin', value: 'https://realtim48show.my.id' }]);
+  it('keeps the direct secret list on the website being opened', () => {
+    expect(isLocalSecretReplay(routing, '/rply', '')).toBe(true);
+    expect(isLocalSecretReplay(routing, '/RPLY/', '?month=2026-11')).toBe(true);
+    expect(isLocalSecretReplay(routing, '/', '')).toBe(false);
+  });
+  it('preserves website B routing for replay access links', () => {
+    for (const search of ['?replay=r1', '?token=test-token', '?pw=test-password', '?mtoken=test-member']) {
+      expect(isLocalSecretReplay(routing, '/rply', search)).toBe(false);
+    }
+    expect(isLocalSecretReplay(routing, '/akses', '?token=test-token')).toBe(false);
   });
 });
