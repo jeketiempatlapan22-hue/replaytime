@@ -94,7 +94,8 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
       try {
         const sess = !!sessionStorage.getItem(`replaytime-live-unlocked-${show.id}`);
         const purchase = getShowPurchase(show.id);
-        const membership = readMembershipCredentials();
+        const local = readMembershipCredentials();
+        const membership = local?.token ? local : (accountMembership?.token ? { token: accountMembership.token, password: accountMembership.password } : null);
         setPurchasedToken(purchase?.token || '');
         // Show sudah jadi replay: token show juga membuka replay-nya.
         if (purchase?.token && show.replay_id && !getReplayPurchase(show.replay_id)) {
@@ -116,7 +117,7 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
       window.removeEventListener('replaytime-purchases-updated', refresh);
       window.removeEventListener(MEMBERSHIP_UPDATED_EVENT, refresh);
     };
-  }, [show.id, show.replay_id]);
+  }, [show.id, show.replay_id, accountMembership?.token]);
 
   // Cross-device sync: if user is logged in, fetch their paid orders for this show
   useEffect(() => {
