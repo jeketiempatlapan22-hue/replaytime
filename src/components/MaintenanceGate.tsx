@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
+import { MessageCircle, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminWa } from '@/hooks/useAdminWa';
+import { Button } from '@/components/ui/button';
 
 // Halaman yang tetap bisa dibuka saat Mode Perbaikan aktif.
 const LIVE_PATHS = ['/live', '/kunci', '/free', '/tv', '/reseller'];
@@ -11,6 +13,7 @@ const ALWAYS_OPEN = ['/adpan', '/auth', '/reset-password'];
 const normPath = (v: string) => String(v || '').trim().replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9-]/gi, '').toLowerCase();
 
 export function MaintenanceScreen({ message }: { message?: string }) {
+  const wa = useAdminWa();
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
       <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -20,6 +23,13 @@ export function MaintenanceScreen({ message }: { message?: string }) {
       <p className="max-w-sm text-sm text-muted-foreground">
         {message || 'Kami sedang melakukan perbaikan. Silakan kembali beberapa saat lagi.'}
       </p>
+      {wa && (
+        <Button asChild className="mt-2 gap-2">
+          <a href={`https://wa.me/${wa}?text=${encodeURIComponent('Halo Admin, website sedang dalam perbaikan. Saya butuh bantuan.')}`} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4" /> Hubungi Admin
+          </a>
+        </Button>
+      )}
     </div>
   );
 }
