@@ -56,6 +56,13 @@ export function crossTarget(origin: string, currentHost = window.location.host):
   try { return bareHost(new URL(origin).host) !== bareHost(currentHost) ? origin : ''; } catch { return ''; }
 }
 
+/** Daftar rahasia langsung tetap lokal; link akses pembelian tetap mengikuti replay_origin. */
+export function isLocalSecretReplay(r: SiteRouting, pathname: string, search: string): boolean {
+  const seg = pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+  const params = new URLSearchParams(search);
+  return seg === r.replay_path && !['replay', 'token', 'pw', 'mtoken', 'mp', 't'].some((key) => params.has(key));
+}
+
 const HANDOFF_PW = 'rt-handoff-pw';
 export function stashLivePassword(pw: string) { try { sessionStorage.setItem(HANDOFF_PW, pw); } catch { /* ignore */ } }
 
