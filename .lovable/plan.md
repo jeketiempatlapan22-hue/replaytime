@@ -28,6 +28,12 @@ Kartu "Membership Saya" diperjelas untuk setiap membership aktif:
 - Link token membership dengan tombol Salin (teks tetap bisa dipilih manual jika salin gagal).
 - Tombol "Tonton Live" dan "Tonton Replay" langsung.
 
+## 4. Tombol "Masukkan Sandi" kembali di kartu show
+- Tombol "Masukkan Sandi" muncul lagi di kartu show (termasuk saat mode kunci aktif), di samping tombol beli.
+- Sandi satuan, sandi bulanan/membership, dan sandi bundle diperiksa di server. Jika benar, penonton langsung dibawa ke halaman Live (show sedang tayang) atau Replay (show sudah jadi replay).
+- Jika Website B diatur, penonton langsung dipindah ke Website B dengan sandinya ikut terbawa, jadi tidak perlu mengetik ulang.
+- Jika sandi salah, muncul pesan jelas dan penonton tetap di kartu.
+
 ## Detail teknis
 - Perbarui `get_my_memberships()` (migrasi) agar juga mengembalikan baris `membership_tokens` yang `phone`-nya cocok dengan `profiles.phone` user (pakai `norm_phone`), tanpa duplikasi dengan order.
 - `ActiveShowCard`: gunakan `useActiveMembership()` sebagai sumber utama, fallback ke `readMembershipCredentials()`; simpan kredensial ke HP saat ditemukan dari akun.
