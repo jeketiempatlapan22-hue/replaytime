@@ -12,6 +12,7 @@ import { type ActiveShow, getShowDateTime } from '@/lib/activeShows';
 import { useNavigate } from 'react-router-dom';
 import { getShowPurchase, setShowPurchase, getReplayPurchase, setReplayPurchase } from '@/lib/purchases';
 import { MEMBERSHIP_UPDATED_EVENT, readMembershipCredentials } from '@/lib/membershipAccess';
+import { useActiveMembership } from '@/hooks/useActiveMembership';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { thumbUrl } from '@/lib/imageUrl';
@@ -80,6 +81,9 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
   const isLiveNow = !holdActive && (!!show.is_live || autoLive);
 
 
+  // Membership dari akun (termasuk buatan admin/reseller via nomor HP) disimpan ke
+  // perangkat oleh hook ini, lalu dibaca oleh refresh() di bawah.
+  const { membership: accountMembership } = useActiveMembership();
   // Per-show unlock check (sessionStorage live unlock OR localStorage purchase)
   const [hasAccess, setHasAccess] = useState(false);
   const [purchasedToken, setPurchasedToken] = useState<string>('');
@@ -148,6 +152,12 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
   const goLive = () => {
     if (membershipToken) navigate(`/live?show=${show.id}&mtoken=${encodeURIComponent(membershipToken)}&mp=${encodeURIComponent(membershipPassword)}`);
     else if (purchasedToken) navigate(`/live?show=${show.id}&t=${purchasedToken}`);
+    else navigate(`/live?show=${show.id}`);
+  };
+  // "Masukkan Sandi": buka halaman Live / Replay yang meminta sandi (satuan, bulanan,
+  // membership, bundle). Pengalihan ke Website B ditangani DomainRouter.
+  const goPassword = () => {
+    if (replayMode && show.replay_id) navigate(`/replay/${show.replay_id}`);
     else navigate(`/live?show=${show.id}`);
   };
 
@@ -288,19 +298,33 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
         {/* Action buttons */}
         {lockedMode ? (
           <div className="pt-2 space-y-2">
-            {!purchasedToken && (replayMode ? replayBuyable : showBuyable) && (
-              <Button className="w-full gap-2" onClick={() => openBuy(replayMode ? 'replay' : 'show')}>
-                <ShoppingCart className="w-4 h-4" />
-                {replayMode
-                  ? (replayPriced && replayCoinPrice > 0 ? 'Beli Replay via QRIS & Koin' : replayPriced ? 'Beli Replay via QRIS' : `Tukar ${replayCoinPrice} Koin untuk Replay`)
-                  : (showPriced && showCoinPrice > 0 ? 'Beli Show via QRIS & Koin' : showPriced ? 'Beli Show via QRIS' : `Tukar ${showCoinPrice} Koin untuk Show`)}
+            {/* Member aktif: langsung tonton (dipindah ke Website B bila diatur). */}
+            {membershipToken ? (
+              <Button className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white" onClick={replayMode ? goReplay : goLive}>
+                {replayMode ? <><Play className="w-4 h-4" /> Tonton Replay (Member)</> : <><Radio className="w-4 h-4" /> Tonton Live (Member)</>}
               </Button>
+            ) : (
+              <>
+                {!purchasedToken && (replayMode ? replayBuyable : showBuyable) && (
+                  <Button className="w-full gap-2" onClick={() => openBuy(replayMode ? 'replay' : 'show')}>
+                    <ShoppingCart className="w-4 h-4" />
+                    {replayMode
+                      ? (replayPriced && replayCoinPrice > 0 ? 'Beli Replay via QRIS & Koin' : replayPriced ? 'Beli Replay via QRIS' : `Tukar ${replayCoinPrice} Koin untuk Replay`)
+                      : (showPriced && showCoinPrice > 0 ? 'Beli Show via QRIS & Koin' : showPriced ? 'Beli Show via QRIS' : `Tukar ${showCoinPrice} Koin untuk Show`)}
+                  </Button>
+                )}
+                {!purchasedToken && (
+                  <Button variant="secondary" className="w-full gap-2" onClick={goPassword}>
+                    <Lock className="w-4 h-4" /> Masukkan Sandi
+                  </Button>
+                )}
+                <Button asChild variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
+                  <a href={adminWaLink(adminWa, `Halo admin, saya ingin akses ${replayMode ? 'replay' : 'live'} ${show.title} (${show.show_date}).`)} target="_blank" rel="noopener noreferrer">
+                    {replayMode ? 'Hubungi Admin Untuk Akses Replay' : 'Hubungi Admin Untuk Akses Live'}
+                  </a>
+                </Button>
+              </>
             )}
-            <Button asChild variant="outline" className="w-full border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
-              <a href={adminWaLink(adminWa, `Halo admin, saya ingin akses ${replayMode ? 'replay' : 'live'} ${show.title} (${show.show_date}).`)} target="_blank" rel="noopener noreferrer">
-                {replayMode ? 'Hubungi Admin Untuk Akses Replay' : 'Hubungi Admin Untuk Akses Live'}
-              </a>
-            </Button>
           </div>
         ) : (
         <div className="pt-2 space-y-2">
