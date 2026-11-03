@@ -4,6 +4,7 @@ import { MessageCircle, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminWa } from '@/hooks/useAdminWa';
 import { Button } from '@/components/ui/button';
+import { isMaintenanceHere, maintenanceKey } from '@/lib/maintenance';
 
 // Halaman yang tetap bisa dibuka saat Mode Perbaikan aktif.
 const LIVE_PATHS = ['/live', '/kunci', '/free', '/tv', '/reseller'];
@@ -43,13 +44,11 @@ export default function MaintenanceGate({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const loadSettings = async () => {
-      const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'maintenance_origin', 'replay_path']);
+      const host = window.location.host;
+      const { data } = await supabase.from('site_settings').select('key,value').in('key', ['maintenance_mode', 'maintenance_message', 'maintenance_origin', 'replay_path', maintenanceKey(host)]);
       const m = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
-      // Mode Perbaikan tidak terhubung antar website: hanya berlaku di website yang
-      // menyalakannya (maintenance_origin). Kosong = berlaku di semua (perilaku lama).
-      const origin = String(m.maintenance_origin || '').trim().replace(/\/+$/, '').toLowerCase();
-      const here = window.location.origin.toLowerCase();
-      setMode(m.maintenance_mode === 'true' && (!origin || origin === here));
+      // Mode Perbaikan tidak terhubung antar website: saklar terpisah per domain.
+      setMode(isMaintenanceHere(m, host));
       setMsg(m.maintenance_message || '');
       setSecretPath(normPath(m.replay_path || '') || 'rply');
     };
