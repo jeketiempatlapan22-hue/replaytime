@@ -12,6 +12,8 @@ const REDIRECT_HOSTS = new Set([
   'replaytime.lovable.app',
   ...OLD_HOSTS,
   ...OLD_HOSTS.map((h) => `www.${h}`),
+  // Hosting kini melayani domain utama tanpa www (200), jadi www aman dialihkan.
+  `www.${PRIMARY_HOST}`,
 ]);
 if (typeof window !== 'undefined' && REDIRECT_HOSTS.has(window.location.hostname)) {
   const { pathname, search, hash } = window.location;
