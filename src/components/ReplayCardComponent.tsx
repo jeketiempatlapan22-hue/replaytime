@@ -372,9 +372,10 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
                       <Badge variant="secondary" className="text-xs">atau {(replay as any).price_coins} koin</Badge>
                     )}
                   </div>
-                  <Button type="button" className="w-full gap-2" onClick={() => setBuyOpen(true)}>
-                    <ShoppingCart className="w-4 h-4" />
-                    {((replay as any).price_coins ?? 0) > 0 ? 'Beli Replay via QRIS & Koin' : 'Beli Replay via QRIS'}
+                  <Button asChild className="w-full gap-2">
+                    <a href={adminWaLink(adminWa, `Halo admin, saya ingin beli replay ${displayShortTitle(replay as any)} (${replay.date}).`)} target="_blank" rel="noopener noreferrer">
+                      <ShoppingCart className="w-4 h-4" /> Chat Admin untuk Beli Replay
+                    </a>
                   </Button>
                   <Button type="button" variant="secondary" className="w-full gap-2" onClick={() => window.location.assign(`/replay/${replay.id}`)}>
                     <Lock className="w-4 h-4" /> Masukkan Sandi
