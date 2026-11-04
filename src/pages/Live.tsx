@@ -41,7 +41,7 @@ interface PublicSource { label: string; type: SrcType }
 interface PrivateSource extends PublicSource { url: string }
 interface MembershipInfo { expires_at?: string; resets_used: number; resets_max: number; remaining: number; includes_replays?: boolean; max_devices?: number }
 interface LiveStatus { enabled: boolean; title: string; type: string; require_password: boolean; sources: PublicSource[]; lineup: string[]; show_date?: string; show_time?: string; image_url?: string; idn_show_id?: string; group_link?: string; group_link_enabled?: boolean; group_link_label?: string; group_link_note?: string }
-interface UnlockedConfig { title: string; type: SrcType; url: string; sources: PrivateSource[]; watermark: string; enabled: boolean; idn_show_id?: string; grant?: string }
+interface UnlockedConfig { title: string; type: SrcType; url: string; sources: PrivateSource[]; watermark: string; enabled: boolean; idn_show_id?: string; server2_url?: string; grant?: string }
 type SourceLike = Partial<Record<keyof PrivateSource, unknown>>;
 interface IdnTokenResponse { error?: string; xApiToken?: string; xSecKey?: string; xTokenId?: string; xShowId?: string; playbackUrl?: string }
 type PiPDocument = Document & { pictureInPictureEnabled?: boolean; pictureInPictureElement?: Element | null; exitPictureInPicture?: () => Promise<void> };
@@ -353,6 +353,7 @@ function LiveInner() {
           watermark: adminMonitor ? '' : (data.watermark || ''),
           enabled: !!data.enabled,
           idn_show_id: data.idn_show_id || '',
+          server2_url: data.server2_url || '',
           grant: data.grant || '',
         };
         // For silent revalidation, NEVER overwrite the existing player URL/sources.
@@ -369,6 +370,7 @@ function LiveInner() {
             if (!prev) return cfg;
             const next = { ...prev, enabled: cfg.enabled, title: cfg.title, type: cfg.type };
             if (cfg.idn_show_id) next.idn_show_id = cfg.idn_show_id;
+            next.server2_url = cfg.server2_url || '';
             if (cfg.grant) next.grant = cfg.grant;
             if (!prev.url && cfg.url) next.url = cfg.url;
             // Merge playlist sources by URL: keep existing entries (so the
@@ -740,6 +742,9 @@ function LiveInner() {
     if (mainIsDirect) list.push(main);
     // IDN/hanabira tetap tersedia sebagai sumber (aturan tidak diubah).
     if (idnShowId) list.push({ label: 'IDN', type: 'm3u8', url: `idn://${idnShowId}` });
+    // Server 2: link m3u8 langsung dari admin, diputar tanpa proxy/token.
+    const s2 = (unlocked.server2_url || '').trim();
+    if (/^https?:\/\//i.test(s2)) list.push({ label: 'Server 2', type: 'm3u8', url: s2 });
     if (main.url && !mainIsDirect) list.push(main);
     list.push(...(unlocked.sources || []).filter(s => s.url));
     return list;
