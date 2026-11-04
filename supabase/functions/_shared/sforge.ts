@@ -7,7 +7,7 @@ export interface SforgeShow { job_name: string; master: string; master_final: st
 const slug = (s: string) => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, " ").trim();
 
 export async function fetchSforgeShows(timeoutMs = 4000): Promise<SforgeShow[]> {
-  const token = Deno.env.get("SFORGE_SHOW_TOKEN");
+  const token = (globalThis as any).Deno?.env.get("SFORGE_SHOW_TOKEN");
   if (!token) return [];
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
