@@ -307,11 +307,11 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
             ) : (
               <>
                 {!purchasedToken && (replayMode ? replayBuyable : showBuyable) && (
-                  <Button className="w-full gap-2" onClick={() => openBuy(replayMode ? 'replay' : 'show')}>
-                    <ShoppingCart className="w-4 h-4" />
-                    {replayMode
-                      ? (replayPriced && replayCoinPrice > 0 ? 'Beli Replay via QRIS & Koin' : replayPriced ? 'Beli Replay via QRIS' : `Tukar ${replayCoinPrice} Koin untuk Replay`)
-                      : (showPriced && showCoinPrice > 0 ? 'Beli Show via QRIS & Koin' : showPriced ? 'Beli Show via QRIS' : `Tukar ${showCoinPrice} Koin untuk Show`)}
+                  <Button asChild className="w-full gap-2">
+                    <a href={adminWaLink(adminWa, `Halo admin, saya ingin beli ${replayMode ? 'replay' : 'show'} ${show.title} (${show.show_date}).`)} target="_blank" rel="noopener noreferrer">
+                      <ShoppingCart className="w-4 h-4" />
+                      {replayMode ? 'Chat Admin untuk Beli Replay' : 'Chat Admin untuk Beli Show'}
+                    </a>
                   </Button>
                 )}
                 {!purchasedToken && (
