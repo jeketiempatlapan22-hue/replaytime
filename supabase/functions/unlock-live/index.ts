@@ -3,6 +3,13 @@ import { GRANT_TTL_FREE, signGrant } from "../_shared/stream-grant.ts";
 import { findMembershipByPassword, membershipPasswordOk } from "../_shared/membership-password.ts";
 import { bundlePasswordValidForShow } from "../_shared/bundle.ts";
 import { isRequestBlocked } from "../_shared/user-block.ts";
+import { syncShowsWithSforge } from "../_shared/sforge.ts";
+
+// Isi otomatis Server 2/3 dari SForge bila masih kosong (tanpa admin buka dashboard SForge).
+async function autoSforge(supabase: any, show: any) {
+  if (!show || (show.server2_url && show.server3_url) || !show.title || !show.show_date) return;
+  try { await syncShowsWithSforge(supabase, [show]); } catch { /* abaikan */ }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,10 +125,11 @@ Deno.serve(async (req) => {
       let payload: any = null;
       const { data: liveShow } = await supabase
         .from("active_shows")
-        .select("id,title,is_live,live_url,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
+        .select("id,title,is_live,live_url,live_type,live_sources,show_date,show_time,idn_show_id,server2_url,server3_url")
         .eq("is_active", true).eq("is_live", true)
         .order("show_date", { ascending: false }).order("show_time", { ascending: false })
         .limit(1).maybeSingle();
+      if (liveShow) await autoSforge(supabase, liveShow);
       if (liveShow) {
         payload = {
           valid: true, enabled: true, title: liveShow.title, type: liveShow.live_type || "m3u8",
@@ -130,6 +138,7 @@ Deno.serve(async (req) => {
           show_date: liveShow.show_date, show_time: liveShow.show_time,
           idn_show_id: liveShow.idn_show_id || "",
           server2_url: liveShow.server2_url || "",
+          server3_url: liveShow.server3_url || "",
           show_id: liveShow.id,
         };
       } else {
@@ -138,7 +147,7 @@ Deno.serve(async (req) => {
         const todayWib = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
         let { data: upcoming } = await supabase
           .from("active_shows")
-          .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
+          .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url,server3_url")
           .eq("is_active", true)
           .gte("show_date", todayWib)
           .order("show_date", { ascending: true }).order("show_time", { ascending: true })
@@ -146,12 +155,13 @@ Deno.serve(async (req) => {
         if (!upcoming) {
           const { data: latest } = await supabase
             .from("active_shows")
-            .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
+            .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url,server3_url")
             .eq("is_active", true)
             .order("show_date", { ascending: false }).order("show_time", { ascending: false })
             .limit(1).maybeSingle();
           upcoming = latest;
         }
+        if (upcoming) await autoSforge(supabase, upcoming);
         if (upcoming) {
           payload = {
             valid: true, enabled: false, title: upcoming.title, type: upcoming.live_type || "m3u8",
@@ -159,6 +169,7 @@ Deno.serve(async (req) => {
             show_date: upcoming.show_date, show_time: upcoming.show_time,
             idn_show_id: upcoming.idn_show_id || "",
             server2_url: upcoming.server2_url || "",
+            server3_url: upcoming.server3_url || "",
             show_id: upcoming.id,
           };
         } else {
@@ -208,12 +219,13 @@ Deno.serve(async (req) => {
     if (resolvedShowId) {
       const { data: show } = await supabase
         .from("active_shows")
-        .select("id,title,is_live,live_auto_schedule,live_url,live_type,live_sources,live_password,live_require_password,show_date,show_time,is_active,idn_show_id,server2_url,replay_id")
+        .select("id,title,is_live,live_auto_schedule,live_url,live_type,live_sources,live_password,live_require_password,show_date,show_time,is_active,idn_show_id,server2_url,server3_url,replay_id")
         .eq("id", resolvedShowId).maybeSingle();
       if (!show || !show.is_active) {
         if (show_id) return json({ valid: false, reason: "off" });
         // fall through to legacy branch
       } else {
+      await autoSforge(supabase, show);
 
       // Auto schedule hanya berlaku saat toggle admin diaktifkan.
       const autoLiveNow = (() => {
@@ -232,6 +244,7 @@ Deno.serve(async (req) => {
         show_date: show.show_date, show_time: show.show_time,
         idn_show_id: show.idn_show_id || "",
         server2_url: show.server2_url || "",
+        server3_url: show.server3_url || "",
         grant: "",
         watermark: `RT-${String(show.id).slice(0, 4).toUpperCase()}`,
       };

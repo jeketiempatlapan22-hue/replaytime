@@ -139,7 +139,7 @@ export default function Admin() {
 
   // Active shows state
   const [activeShows, setActiveShows] = useState<ActiveShow[]>([]);
-  const [showForm, setShowForm] = useState<{ id?: string; title: string; show_date: string; show_time: string; lineup: string; category: string; featured_member: string; description: string; image_url: string; sort_order: number; is_active: boolean; is_special: boolean; price_show: number; price_replay: number; price_show_coins: number; price_replay_coins: number; pakasir_amount: number; replay_id: string; replay_enabled: boolean; admin_alias: string; short_title: string; server2_url?: string }>({
+  const [showForm, setShowForm] = useState<{ id?: string; title: string; show_date: string; show_time: string; lineup: string; category: string; featured_member: string; description: string; image_url: string; sort_order: number; is_active: boolean; is_special: boolean; price_show: number; price_replay: number; price_show_coins: number; price_replay_coins: number; pakasir_amount: number; replay_id: string; replay_enabled: boolean; admin_alias: string; short_title: string; server2_url?: string; server3_url?: string }>({
     title: '', show_date: '', show_time: '19:00', lineup: '', category: 'reguler', featured_member: '', description: '', image_url: '', sort_order: 0, is_active: true, is_special: false,
     price_show: 0, price_replay: 0, price_show_coins: 0, price_replay_coins: 0, pakasir_amount: 0, replay_id: '', replay_enabled: false, admin_alias: '', short_title: '',
   });
@@ -181,8 +181,10 @@ export default function Admin() {
         admin_alias: showForm.admin_alias.trim().toLowerCase() || null,
         short_title: (showForm.short_title.trim() || abbreviateTitle(showForm.title)).toUpperCase(),
         ...(showForm.server2_url !== undefined ? { server2_url: showForm.server2_url.trim() } : {}),
+        ...(showForm.server3_url !== undefined ? { server3_url: showForm.server3_url.trim() } : {}),
       } as any);
       toast({ title: showForm.id ? 'Show diperbarui' : 'Show ditambahkan' });
+      supabase.functions.invoke('manage-live', { body: { action: 'sforge_sync' } }).catch(() => {});
       resetShowForm();
       refreshActiveShows();
     } catch (e: any) {
@@ -203,6 +205,7 @@ export default function Admin() {
       admin_alias: (s as any).admin_alias ?? '',
       short_title: (s as any).short_title ?? '',
       server2_url: (s as any).server2_url,
+      server3_url: (s as any).server3_url,
     });
     setShowEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -914,9 +917,21 @@ export default function Admin() {
                   <Input value={showForm.short_title} onChange={e => setShowForm({ ...showForm, short_title: e.target.value.toUpperCase().slice(0, 12) })} placeholder={abbreviateTitle(showForm.title) || 'contoh: PJMD'} />
                   <p className="text-[11px] text-muted-foreground mt-1">Kosongkan = otomatis ({abbreviateTitle(showForm.title) || '-'}). Ikut ke replay saat show dijadikan replay.</p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={async () => {
+                    const { data, error } = await supabase.functions.invoke('manage-live', { body: { action: 'sforge_sync' } });
+                    if (error) { toast({ title: 'Sinkron SForge gagal', variant: 'destructive' }); return; }
+                    toast({ title: `SForge: ${data?.updated?.length || 0} show diisi otomatis`, description: `${data?.total_sforge || 0} show tersedia di SForge` });
+                    refreshActiveShows();
+                  }}>🔄 Sinkronkan SForge (Server 2 & 3)</Button>
+                </div>
                 <div>
                   <Label>Link Server 2 (m3u8 langsung, tanpa proxy)</Label>
                   <Input value={showForm.server2_url ?? ''} onChange={e => setShowForm({ ...showForm, server2_url: e.target.value })} placeholder={showForm.id && showForm.server2_url === undefined ? 'Biarkan kosong = tidak diubah' : 'https://.../playlist.m3u8'} />
+                </div>
+                <div>
+                  <Label>Link Server 3 (m3u8 cadangan, tanpa proxy)</Label>
+                  <Input value={showForm.server3_url ?? ''} onChange={e => setShowForm({ ...showForm, server3_url: e.target.value })} placeholder={showForm.id && showForm.server3_url === undefined ? 'Biarkan kosong = tidak diubah' : 'Kosong = diisi otomatis dari SForge'} />
                 </div>
                 <div>
                   <Label>Alias Admin (untuk command bot)</Label>

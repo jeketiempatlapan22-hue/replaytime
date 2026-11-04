@@ -100,6 +100,7 @@ export default function Kunci() {
           enabled: !!data.enabled,
           idn_show_id: data.idn_show_id || '',
           server2_url: data.server2_url || '',
+          server3_url: data.server3_url || '',
           grant: data.grant || '',
         };
         try { sessionStorage.setItem(ssKey, JSON.stringify(cfg)); } catch { /* ignore */ }

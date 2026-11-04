@@ -55,6 +55,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
   const [replayYt, setReplayYt] = useState('');
   const [idnShowId, setIdnShowId] = useState('');
   const [server2Url, setServer2Url] = useState('');
+  const [server3Url, setServer3Url] = useState('');
   const [groupLink, setGroupLink] = useState('');
   const [groupLinkEnabled, setGroupLinkEnabled] = useState(false);
   const [groupLinkLabel, setGroupLinkLabel] = useState('Join Saluran');
@@ -176,6 +177,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
         setReplayYt(row.replay_youtube_url || '');
         setIdnShowId((row as any).idn_show_id || '');
         setServer2Url((row as any).server2_url || '');
+        setServer3Url((row as any).server3_url || '');
         setGroupLink((row as any).group_link || '');
         setGroupLinkEnabled(!!(row as any).group_link_enabled);
         setGroupLinkLabel((row as any).group_link_label || 'Join Saluran');
@@ -247,6 +249,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
             replay_youtube_url: normalizedReplayYt,
             idn_show_id: idnShowId.trim(),
             server2_url: server2Url.trim(),
+            server3_url: server3Url.trim(),
             group_link: groupLink.trim(),
             group_link_enabled: groupLinkEnabled,
             group_link_label: groupLinkLabel.trim() || 'Join Saluran',
@@ -601,6 +604,11 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
           placeholder="https://.../playlist.m3u8 — kosongkan untuk menyembunyikan Server 2"
         />
         <p className="text-[11px] text-muted-foreground mt-1">Tampil sebagai tombol "Server 2" di samping IDN, diputar langsung tanpa proxy.</p>
+      </div>
+      <div>
+        <Label className="text-xs flex items-center gap-1">🛰️ Link Server 3 (m3u8 cadangan)</Label>
+        <Input value={server3Url} onChange={e => setServer3Url(e.target.value)} placeholder="Kosong = diisi otomatis dari SForge (master-final)" />
+        <p className="text-[11px] text-muted-foreground mt-1">Server 2 & 3 terisi otomatis dari SForge bila judul & tanggal show cocok. Link manual non-SForge tidak ditimpa.</p>
       </div>
 
       {/* Show Spesial: link grup & info replay */}

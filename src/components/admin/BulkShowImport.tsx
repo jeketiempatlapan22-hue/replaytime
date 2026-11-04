@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { abbreviateTitle } from '@/lib/abbrev';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -148,6 +149,7 @@ export default function BulkShowImport({ onImported }: Props) {
         fail++;
       }
     }
+    supabase.functions.invoke('manage-live', { body: { action: 'sforge_sync' } }).catch(() => {});
     setSaving(false);
     toast({ title: `Import selesai`, description: `Berhasil: ${ok}, Gagal: ${fail}` });
     if (ok > 0) {

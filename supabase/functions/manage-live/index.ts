@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { syncShowsWithSforge } from "../_shared/sforge.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,7 +27,7 @@ function cleanLineup(lineup: unknown) {
 
 function cleanActiveShowPayload(input: Record<string, unknown>) {
   const payload: Record<string, unknown> = {};
-  const textFields = ['title', 'show_date', 'show_time', 'category', 'featured_member', 'description', 'image_url', 'admin_alias', 'live_url', 'live_type', 'live_password', 'replay_m3u8_url', 'replay_youtube_url', 'idn_show_id', 'server2_url', 'group_link', 'group_link_label', 'group_link_note', 'replay_info', 'short_title'];
+  const textFields = ['title', 'show_date', 'show_time', 'category', 'featured_member', 'description', 'image_url', 'admin_alias', 'live_url', 'live_type', 'live_password', 'replay_m3u8_url', 'replay_youtube_url', 'idn_show_id', 'server2_url', 'server3_url', 'group_link', 'group_link_label', 'group_link_note', 'replay_info', 'short_title'];
   const boolFields = ['is_active', 'is_special', 'replay_enabled', 'is_live', 'live_auto_schedule', 'live_require_password', 'replay_mode', 'group_link_enabled'];
   const numberFields = ['sort_order', 'price_show', 'price_replay', 'price_show_coins', 'price_replay_coins', 'pakasir_amount'];
 
@@ -79,6 +80,11 @@ Deno.serve(async (req) => {
     if (action === "get_config") {
       const { data } = await admin.from("live_config_private").select("*").limit(1).maybeSingle();
       return json({ config: data });
+    }
+    if (action === "sforge_sync") {
+      const { data: shows } = await admin.from("active_shows").select("id,title,show_date,server2_url,server3_url").eq("is_active", true);
+      const r = await syncShowsWithSforge(admin, shows || []);
+      return json({ ok: true, ...r });
     }
     if (action === "set_config") {
       const { enabled, title, type, url, password, require_password, sources, lineup } = body;
