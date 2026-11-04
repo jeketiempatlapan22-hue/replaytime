@@ -99,11 +99,8 @@ Deno.serve(async (req) => {
     if (error) return json({ error: 'create_failed', detail: error.message }, 500);
 
     const link = `${origin}/akses?token=${token}&replay=${r.id}`;
-    const date = r.date ? new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
-    const password = r.password ? String(r.password) : '';
-    const message = renderWaTemplate(tpl, { title: r.title, link, date, password, site: siteOnly })
-      + `\n⏳ Berlaku sampai: *${fmtId(expiresAt)}*`
-      + `\n\n👤 *1 device saja* — token akan terkunci ke perangkat pertama yang membuka.`;
+    const message = ['🎬 *ReplayTime*', '', `🎤 *${r.title}*`, r.date ? `📅 ${r.date}` : '', '', '🔗 *Link Akses*', link,
+      r.password ? `\n🔐 Sandi: *${r.password}*` : '', `\n⏳ Berlaku sampai: *${fmtId(expiresAt)}*`, '', '✨ Selamat menonton! 💖'].join('\n');
 
     await admin.from('token_deliveries').insert({
       phone, replay_id: r.id, replay_title: r.title, access_token: token, link,
@@ -119,7 +116,7 @@ Deno.serve(async (req) => {
 
   // kind === 'show'
   const { data: s } = await admin.from('active_shows')
-    .select('id,title,show_date,show_time,live_password').eq('id', targetId).maybeSingle();
+    .select('id,title,show_date,show_time,live_password,replay_info,replay_id').eq('id', targetId).maybeSingle();
   if (!s) return json({ error: 'show_not_found' }, 404);
 
   // expires_at = jadwal show + 8 jam (akhir window auto-schedule live, WIB +07:00)
@@ -132,25 +129,13 @@ Deno.serve(async (req) => {
   if (error) return json({ error: 'create_failed', detail: error.message }, 500);
 
   const link = `${origin}/live?show=${s.id}&t=${token}`;
-  const livePw = s.live_password ? String(s.live_password) : '';
-  const message = [
-    '🔐 *TOKEN LIVE SATUAN*',
-    '',
-    `🎤 *${s.title}*`,
-    `📅 ${s.show_date} ${String(s.show_time).slice(0, 5)}`,
-    `⏳ Berlaku sampai: *${fmtId(expiresAt)}*`,
-    '',
-    '🔗 *Link Live:*',
-    link,
-    '',
-    '🎬 *Link Replay:*',
-    siteOnly,
-    ...(livePw ? ['', `🔐 Sandi Replay: *${livePw}*`] : []),
-    '',
-    '👤 Hanya untuk *1 perangkat pertama* & hanya untuk show ini.',
-    '',
-    '— *ReplayTime* 💖',
-  ].join('\n');
+  let replayPassword = String(s.live_password || '');
+  if (!replayPassword && s.replay_id) {
+    const { data: rp } = await admin.from('replays').select('password').eq('id', s.replay_id).maybeSingle();
+    replayPassword = String(rp?.password || '');
+  }
+  const message = ['🔐 *TOKEN LIVE*', '', `🎤 *${s.title}*`, `📅 ${s.show_date} ${String(s.show_time).slice(0, 5)}`, `⏳ Berlaku sampai: *${fmtId(expiresAt)}*`, '',
+    '🔗 *Link Live:*', link, '', '🎬 *Link Replay:*', siteOnly, ...(replayPassword ? ['', `🔐 Sandi Replay: *${replayPassword}*`] : []), ...(s.replay_info ? ['', '🎞️ *Info Replay*', s.replay_info] : []), '', '— *ReplayTime* 💖'].join('\n');
 
   await admin.from('token_deliveries').insert({
     phone, replay_id: null, replay_title: s.title, access_token: token, link,
@@ -161,5 +146,5 @@ Deno.serve(async (req) => {
     kind: 'show', target_id: s.id, target_title: s.title,
     token, expires_at: expiresAt.toISOString(),
   });
-  return json({ ok: true, token, link, message, title: s.title, expires_at: expiresAt.toISOString() });
+  return json({ ok: true, token, link, message, password: replayPassword, title: s.title, expires_at: expiresAt.toISOString() });
 });

@@ -121,15 +121,9 @@ Deno.serve(async (req) => {
 
   const link = `${origin}/live?mtoken=${encodeURIComponent(token)}&mp=${encodeURIComponent(password)}`;
   const expStr = expiresAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const message = build(tpl, {
-    package_name: pkg.name,
-    link, password,
-    expires_at: expStr,
-    duration_days: String(effectiveDays),
-    max_devices: String(pkg.max_devices || 1),
-    replay_info: replayInfo,
-    site: origin.replace(/^https?:\/\//, ''),
-  }) + `\n\n📝 Dibuat oleh reseller (${effectiveDays} hari).`;
+  const siteOnly = origin.replace(/^https?:\/\//, '');
+  const message = ['👑 *MEMBERSHIP AKTIF*', '', `📦 *${pkg.name}*`, `📅 Berlaku hingga: ${expStr}`, '',
+    '🔗 *Link Akses:*', link, '', '🎬 *Link Replay:* ' + siteOnly, '', `🔐 Sandi: *${password}*`, '', '— *ReplayTime* 💖'].join('\n');
 
   await admin.from('token_deliveries').insert({
     phone, replay_id: null, replay_title: `Membership • ${pkg.name}`,
