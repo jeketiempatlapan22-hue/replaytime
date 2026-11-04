@@ -484,3 +484,25 @@
   --ring: 205 60% 45%;
   --accent: 190 50% 48%;
 }
+
+/* Live YouTube: frame menutupi seluruh layar saat HP landscape (khusus halaman Live). */
+@media (orientation: landscape) and (max-height: 600px) {
+  .live-yt-frame {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: hsl(var(--background));
+  }
+  .live-yt-frame > *,
+  .live-yt-frame [class*="aspect-"] {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    aspect-ratio: auto !important;
+    border-radius: 0 !important;
+  }
+  .live-yt-frame iframe { width: 100% !important; height: 100% !important; }
+}
