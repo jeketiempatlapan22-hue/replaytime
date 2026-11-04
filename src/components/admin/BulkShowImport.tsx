@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { abbreviateTitle } from '@/lib/abbrev';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
