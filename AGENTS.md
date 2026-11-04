@@ -14,3 +14,4 @@
 - Keep short titles on active_shows.short_title and copy them to replays in convert_show_to_replay plus a sync trigger, so admins set abbreviations once at show entry.
 - Store Maintenance Mode per domain in site_settings `maintenance_mode:<host without www>` via src/lib/maintenance.ts (legacy maintenance_mode+maintenance_origin only read), so Website A and B toggle independently while access rules stay shared.
 - get_my_memberships also returns membership_tokens whose phone matches the user's profile phone, so admin/reseller-made memberships unlock watch buttons on the account.
+- Store Server 2 links on active_shows.server2_url and deliver them only through unlock-live after access is verified, so direct m3u8 links (no proxy) are never publicly readable.
