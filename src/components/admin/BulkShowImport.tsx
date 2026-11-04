@@ -135,6 +135,7 @@ export default function BulkShowImport({ onImported }: Props) {
           replay_id: null,
           replay_enabled: false,
           idn_show_id: s.idn_show_id || '',
+          server2_url: s.server2_url || '',
           live_auto_schedule: !!s.live_auto_schedule,
           live_url: s.player_url || '',
           live_type: s.player_url ? s.player_type : 'm3u8',
@@ -300,6 +301,11 @@ export default function BulkShowImport({ onImported }: Props) {
                       <Label className="text-[10px]">ID Hanabira (idn code)</Label>
                       <Input className="h-8 text-xs" placeholder="SHC980" value={s.idn_show_id}
                         onChange={e => updateRow(idx, { idn_show_id: e.target.value.trim() })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-[10px]">Link Server 2 (m3u8 langsung)</Label>
+                      <Input className="h-8 text-xs" placeholder="https://.../playlist.m3u8" value={s.server2_url || ''}
+                        onChange={e => updateRow(idx, { server2_url: e.target.value.trim() })} />
                     </div>
                     <div className="col-span-2">
                       <Label className="text-[10px]">Catatan (STS / Ultah / Graduation / Last Show)</Label>
