@@ -184,6 +184,7 @@ export default function Admin() {
         ...(showForm.server3_url !== undefined ? { server3_url: showForm.server3_url.trim() } : {}),
       } as any);
       toast({ title: showForm.id ? 'Show diperbarui' : 'Show ditambahkan' });
+      supabase.functions.invoke('manage-live', { body: { action: 'sforge_sync' } }).catch(() => {});
       resetShowForm();
       refreshActiveShows();
     } catch (e: any) {
@@ -915,6 +916,14 @@ export default function Admin() {
                   <Label>Singkatan Judul (kartu replay ringkas)</Label>
                   <Input value={showForm.short_title} onChange={e => setShowForm({ ...showForm, short_title: e.target.value.toUpperCase().slice(0, 12) })} placeholder={abbreviateTitle(showForm.title) || 'contoh: PJMD'} />
                   <p className="text-[11px] text-muted-foreground mt-1">Kosongkan = otomatis ({abbreviateTitle(showForm.title) || '-'}). Ikut ke replay saat show dijadikan replay.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={async () => {
+                    const { data, error } = await supabase.functions.invoke('manage-live', { body: { action: 'sforge_sync' } });
+                    if (error) { toast({ title: 'Sinkron SForge gagal', variant: 'destructive' }); return; }
+                    toast({ title: `SForge: ${data?.updated?.length || 0} show diisi otomatis`, description: `${data?.total_sforge || 0} show tersedia di SForge` });
+                    refreshActiveShows();
+                  }}>🔄 Sinkronkan SForge (Server 2 & 3)</Button>
                 </div>
                 <div>
                   <Label>Link Server 2 (m3u8 langsung, tanpa proxy)</Label>
