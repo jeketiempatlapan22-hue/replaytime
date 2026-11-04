@@ -14,6 +14,7 @@ export interface ParsedShow {
   price_replay_coins: number;
   category: string;
   idn_show_id: string;
+  server2_url?: string;
   description: string;
 }
 
@@ -109,6 +110,11 @@ export function parseIdnCode(line: string): string {
   if (m) return m[1];
   const m2 = line.match(/\b(?:idn|hanabira|code)\s*[:=]\s*([A-Za-z0-9_-]{3,})/i);
   return m2 ? m2[1] : '';
+}
+
+export function parseServer2Url(line: string): string {
+  const m = line.match(/\b(?:server\s*2|s2)\s*[:=]\s*(https?:\/\/\S+)/i);
+  return m ? m[1].trim() : '';
 }
 
 export function slugAlias(title: string, date: string, time: string): string {
@@ -208,6 +214,7 @@ export function parseBulkText(text: string): ParseResult {
     let lineup: string[] = [];
     const detectedStatuses: string[] = [];
     let idn = '';
+    let server2 = '';
     let endIdx = dateIdx;
 
     for (let j = dateIdx + 1; j < lines.length; j++) {
@@ -215,6 +222,8 @@ export function parseBulkText(text: string): ParseResult {
       if (!ln) continue;
       // Awal show berikutnya: judul (emoji mic / backtick) atau baris non-detail baru
       if (TITLE_EMOJI.test(ln) || /^`/.test(ln)) break;
+      const s2 = parseServer2Url(ln);
+      if (s2) { server2 = s2; endIdx = j; continue; }
       if (!isDetailLine(ln)) {
         if (isNoiseLine(ln)) { endIdx = j; continue; }
         break;
@@ -270,6 +279,7 @@ export function parseBulkText(text: string): ParseResult {
         price_show_coins: 0, price_replay_coins: 0,
         category: 'reguler',
         idn_show_id: idn,
+        server2_url: server2,
         description: detectedStatuses.join(' • '),
       });
     }

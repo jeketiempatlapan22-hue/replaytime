@@ -1,0 +1,1 @@
+ALTER TABLE public.active_shows ADD COLUMN IF NOT EXISTS server2_url text NOT NULL DEFAULT '';

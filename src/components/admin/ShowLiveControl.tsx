@@ -54,6 +54,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
   const [replayM3u8, setReplayM3u8] = useState('');
   const [replayYt, setReplayYt] = useState('');
   const [idnShowId, setIdnShowId] = useState('');
+  const [server2Url, setServer2Url] = useState('');
   const [groupLink, setGroupLink] = useState('');
   const [groupLinkEnabled, setGroupLinkEnabled] = useState(false);
   const [groupLinkLabel, setGroupLinkLabel] = useState('Join Saluran');
@@ -174,6 +175,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
         setReplayM3u8(row.replay_m3u8_url || '');
         setReplayYt(row.replay_youtube_url || '');
         setIdnShowId((row as any).idn_show_id || '');
+        setServer2Url((row as any).server2_url || '');
         setGroupLink((row as any).group_link || '');
         setGroupLinkEnabled(!!(row as any).group_link_enabled);
         setGroupLinkLabel((row as any).group_link_label || 'Join Saluran');
@@ -244,6 +246,7 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
             replay_m3u8_url: replayM3u8.trim(),
             replay_youtube_url: normalizedReplayYt,
             idn_show_id: idnShowId.trim(),
+            server2_url: server2Url.trim(),
             group_link: groupLink.trim(),
             group_link_enabled: groupLinkEnabled,
             group_link_label: groupLinkLabel.trim() || 'Join Saluran',
@@ -587,6 +590,17 @@ export default function ShowLiveControl({ showId, showTitle }: Props) {
           placeholder="Show ID dari IDN (mis. 1234567). Kosongkan untuk menonaktifkan player IDN."
         />
         <p className="text-[11px] text-muted-foreground mt-1">Saat diisi, sumber "IDN" akan otomatis tampil di playlist player Live. Token stream diambil otomatis dari server.</p>
+      </div>
+
+      {/* Server 2 (m3u8 langsung, tanpa proxy) */}
+      <div>
+        <Label className="text-xs flex items-center gap-1">🛰️ Link Server 2 (m3u8 langsung)</Label>
+        <Input
+          value={server2Url}
+          onChange={e => setServer2Url(e.target.value)}
+          placeholder="https://.../playlist.m3u8 — kosongkan untuk menyembunyikan Server 2"
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">Tampil sebagai tombol "Server 2" di samping IDN, diputar langsung tanpa proxy.</p>
       </div>
 
       {/* Show Spesial: link grup & info replay */}

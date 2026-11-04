@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       let payload: any = null;
       const { data: liveShow } = await supabase
         .from("active_shows")
-        .select("id,title,is_live,live_url,live_type,live_sources,show_date,show_time,idn_show_id")
+        .select("id,title,is_live,live_url,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
         .eq("is_active", true).eq("is_live", true)
         .order("show_date", { ascending: false }).order("show_time", { ascending: false })
         .limit(1).maybeSingle();
@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
           sources: Array.isArray(liveShow.live_sources) ? liveShow.live_sources : [],
           show_date: liveShow.show_date, show_time: liveShow.show_time,
           idn_show_id: liveShow.idn_show_id || "",
+          server2_url: liveShow.server2_url || "",
           show_id: liveShow.id,
         };
       } else {
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
         const todayWib = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
         let { data: upcoming } = await supabase
           .from("active_shows")
-          .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id")
+          .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
           .eq("is_active", true)
           .gte("show_date", todayWib)
           .order("show_date", { ascending: true }).order("show_time", { ascending: true })
@@ -145,7 +146,7 @@ Deno.serve(async (req) => {
         if (!upcoming) {
           const { data: latest } = await supabase
             .from("active_shows")
-            .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id")
+            .select("id,title,live_type,live_sources,show_date,show_time,idn_show_id,server2_url")
             .eq("is_active", true)
             .order("show_date", { ascending: false }).order("show_time", { ascending: false })
             .limit(1).maybeSingle();
@@ -157,6 +158,7 @@ Deno.serve(async (req) => {
             url: "", sources: Array.isArray(upcoming.live_sources) ? upcoming.live_sources : [],
             show_date: upcoming.show_date, show_time: upcoming.show_time,
             idn_show_id: upcoming.idn_show_id || "",
+            server2_url: upcoming.server2_url || "",
             show_id: upcoming.id,
           };
         } else {
@@ -206,7 +208,7 @@ Deno.serve(async (req) => {
     if (resolvedShowId) {
       const { data: show } = await supabase
         .from("active_shows")
-        .select("id,title,is_live,live_auto_schedule,live_url,live_type,live_sources,live_password,live_require_password,show_date,show_time,is_active,idn_show_id,replay_id")
+        .select("id,title,is_live,live_auto_schedule,live_url,live_type,live_sources,live_password,live_require_password,show_date,show_time,is_active,idn_show_id,server2_url,replay_id")
         .eq("id", resolvedShowId).maybeSingle();
       if (!show || !show.is_active) {
         if (show_id) return json({ valid: false, reason: "off" });
@@ -229,6 +231,7 @@ Deno.serve(async (req) => {
         sources: Array.isArray(show.live_sources) ? show.live_sources : [],
         show_date: show.show_date, show_time: show.show_time,
         idn_show_id: show.idn_show_id || "",
+        server2_url: show.server2_url || "",
         grant: "",
         watermark: `RT-${String(show.id).slice(0, 4).toUpperCase()}`,
       };
