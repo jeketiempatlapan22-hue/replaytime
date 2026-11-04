@@ -374,16 +374,18 @@ function LiveInner() {
             next.server2_url = cfg.server2_url || '';
             next.server3_url = cfg.server3_url || '';
             if (cfg.grant) next.grant = cfg.grant;
-            if (!prev.url && cfg.url) next.url = cfg.url;
+            // URL player utama mengikuti admin: dikosongkan → tombol hilang.
+            if (!cfg.url) next.url = '';
+            else if (!prev.url) next.url = cfg.url;
             // Merge playlist sources by URL: keep existing entries (so the
             // active player tidak remount), append baru, dan refresh label.
             // Hasilnya playlist baru yang ditambah admin langsung muncul
             // sebagai chip tambahan secara realtime tanpa memutus live.
             const prevSrcs = Array.isArray(prev.sources) ? prev.sources : [];
             const newSrcs = Array.isArray(cfg.sources) ? cfg.sources : [];
-            if (newSrcs.length) {
+            {
               const byUrl = new Map(newSrcs.map(s => [s.url, s]));
-              const merged = prevSrcs.map(s => {
+              const merged = prevSrcs.filter(s => byUrl.has(s.url)).map(s => {
                 const fresh = byUrl.get(s.url);
                 return fresh ? { ...s, label: fresh.label || s.label, type: fresh.type || s.type } : s;
               });
@@ -759,21 +761,6 @@ function LiveInner() {
     setFailedSourceKeys([]);
   }, [unlocked?.url, unlocked?.sources]);
 
-  // CORS guard: the IDN/hanabira worker only whitelists `realtime48stream.my.id`
-  // (tanpa www, tanpa preview, tanpa replaytime.lovable.app). Saat player IDN
-  // aktif dan user membuka via origin lain, browser memblokir preflight →
-  // player terjebak di memuat. Redirect ke domain canonical agar playback jalan.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const host = window.location.hostname;
-    const CANONICAL = 'realtime48show.my.id';
-    if (host === CANONICAL) return;
-    // Biarkan dev lokal & preview editor apa adanya (jangan loop redirect).
-    if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return;
-    if (host.startsWith('id-preview--') || host.endsWith('.lovableproject.com')) return;
-    const target = `https://${CANONICAL}${window.location.pathname}${window.location.search}${window.location.hash}`;
-    window.location.replace(target);
-  }, []);
 
 
   const safeIdx = Math.min(sourceIdx, Math.max(0, allSources.length - 1));
