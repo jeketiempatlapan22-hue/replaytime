@@ -36,6 +36,13 @@
       "when": 1793706626255,
       "tag": "0004_get_my_memberships_include_phone_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793785957849,
+      "tag": "0005_add_server2_url",
+      "breakpoints": true
     }
   ]
 }
