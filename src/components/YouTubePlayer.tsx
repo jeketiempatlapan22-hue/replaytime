@@ -28,17 +28,17 @@ interface Props {
   onBack: () => void;
 }
 
-function buildSources(source: ReplaySource | null, replay: ReplayRow): PlaylistSource[] {
+export function buildSources(source: ReplaySource | null, replay: ReplayRow): PlaylistSource[] {
   if (!source) return [];
   const list: PlaylistSource[] = Array.isArray(source.sources) ? [...source.sources] : [];
   // Always append legacy fields as additional sources if they aren't already present
   if (source.m3u8_url && !list.some(s => s.type === 'm3u8' && s.url === source.m3u8_url)) {
     list.push({
       id: 'legacy-m3u8',
-      label: list.length === 0 ? 'M3U8' : `M3U8 ${list.filter(s => s.type === 'm3u8').length + 1}`,
+      label: /sforge/i.test(source.m3u8_url) ? 'Server 3' : (list.length === 0 ? 'M3U8' : `M3U8 ${list.filter(s => s.type === 'm3u8').length + 1}`),
       type: 'm3u8',
       url: source.m3u8_url,
-      is_default: list.length === 0,
+      is_default: list.length === 0 || /sforge/i.test(source.m3u8_url),
     });
   }
   if (source.youtube_id && !list.some(s => s.type === 'youtube' && s.url === source.youtube_id)) {

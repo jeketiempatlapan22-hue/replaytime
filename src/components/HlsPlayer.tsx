@@ -25,6 +25,8 @@ interface Props {
   showId?: string;
   /** Payload replay tervalidasi untuk pairing browser TV. */
   replayTvPayload?: Record<string, unknown> | null;
+  /** DVR: simpan seluruh potongan live agar penonton bebas mundur (khusus Server 3). */
+  dvr?: boolean;
 }
 
 export interface HlsPlayerHandle {
@@ -50,7 +52,9 @@ interface QualityLevel {
   bitrate?: number;
 }
 
-const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, onFatalError, onAuthError, onPipChange, hideSeekButtons = false, headers, overlay, showId = '', replayTvPayload = null }, ref) => {
+const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, onFatalError, onAuthError, onPipChange, hideSeekButtons = false, headers, overlay, showId = '', replayTvPayload = null, dvr = false }, ref) => {
+  const dvrRef = useRef(dvr);
+  dvrRef.current = dvr;
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hideControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -428,7 +432,7 @@ const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, o
         if (Math.abs(current - last.time) > 0.25) {
           lastProgressRef.current = { time: current, checkedAt: now, recoveries: 0 };
           // Tertinggal jauh dari siaran (mis. setelah layar mati) → lompat ke potongan terbaru.
-          if (isLiveRef.current && video.seekable.length) {
+          if (isLiveRef.current && !dvrRef.current && video.seekable.length) {
             const edge = video.seekable.end(video.seekable.length - 1);
             if (Number.isFinite(edge) && edge - current > 26) {
               try { video.currentTime = Math.max(0, edge - 8); } catch { /* ignore */ }
@@ -485,7 +489,7 @@ const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, o
         // Prefer smooth playback over ultra-low latency; chasing the live edge is a common cause of rebuffering.
         lowLatencyMode: false,
         // Buffer tuning adaptif berdasarkan profil perangkat & jaringan.
-        backBufferLength: bufferProfile.back,
+        backBufferLength: dvr ? Infinity : bufferProfile.back,
         maxBufferLength: bufferProfile.max,
         maxMaxBufferLength: bufferProfile.maxMax,
         maxBufferSize: bufferProfile.size,
@@ -535,7 +539,7 @@ const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, o
         // Stable live: weak networks intentionally stay farther behind edge to
         // absorb jitter and avoid repeated rebuffer while switching fragments.
         liveSyncDurationCount: liveSyncCount,
-        liveMaxLatencyDurationCount: liveMaxLatencyCount,
+        liveMaxLatencyDurationCount: dvr ? Infinity : liveMaxLatencyCount,
         // Kejar live edge halus dengan sedikit mempercepat video (tanpa lompat).
         maxLiveSyncPlaybackRate: 1,
         progressive: true,
@@ -545,7 +549,7 @@ const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, o
       hls.attachMedia(video);
       hls.on(Hls.Events.LEVEL_LOADED, (_e, d) => {
         // Live: simpan hanya potongan terbaru, buang potongan lama dari memori.
-        if (d?.details?.live && hls) {
+        if (d?.details?.live && hls && !dvrRef.current) {
           hls.config.backBufferLength = 8;
           hls.config.maxBufferLength = Math.max(hls.config.maxBufferLength, 30);
           hls.config.maxMaxBufferLength = Math.max(hls.config.maxMaxBufferLength, 45);
@@ -1208,7 +1212,19 @@ const HlsPlayer = forwardRef<HlsPlayerHandle, Props>(({ src, title, watermark, o
                 appearance: 'none',
               }}
             />
-            <span className="w-12 sm:w-16 text-right shrink-0 tabular-nums">{isLiveStream ? 'LIVE' : formatTime(seekSpan || duration)}</span>
+            {isLiveStream && dvr ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); applySeek(seekEnd); }}
+                className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${seekEnd - currentTime > 15 ? 'bg-white/20 text-white' : 'bg-red-600 text-white'}`}
+                aria-label="Kembali ke LIVE"
+                title="Kembali ke LIVE"
+              >
+                {seekEnd - currentTime > 15 ? `-${formatTime(seekEnd - currentTime)} · LIVE` : 'LIVE'}
+              </button>
+            ) : (
+              <span className="w-12 sm:w-16 text-right shrink-0 tabular-nums">{isLiveStream ? 'LIVE' : formatTime(seekSpan || duration)}</span>
+            )}
           </div>
 
           <div className="flex items-center gap-0.5 sm:gap-2 min-w-0">
