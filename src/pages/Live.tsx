@@ -1076,7 +1076,7 @@ function LiveInner() {
                       <HlsPlayer ref={playerRef} key={`idn-${idnResolved.key}`} src={idnResolved.url} headers={idnResolved.headers} title={unlocked.title} watermark={unlocked.watermark} onFatalError={handleSourceFatalError} onAuthError={() => idnAuthRefreshRef.current?.()} onPipChange={handlePipChange} hideSeekButtons showId={effectiveShowId} />
                     )
                   ) : activeSource.type === 'm3u8'
-                    ? <HlsPlayer ref={playerRef} key={`m3u8-${safeIdx}`} src={activeSource.url} title={unlocked.title} watermark={unlocked.watermark} onFatalError={handleSourceFatalError} onPipChange={handlePipChange} hideSeekButtons showId={effectiveShowId} />
+                    ? <HlsPlayer ref={playerRef} key={`m3u8-${safeIdx}`} src={activeSource.url} title={unlocked.title} watermark={unlocked.watermark} onFatalError={handleSourceFatalError} onPipChange={handlePipChange} hideSeekButtons={activeSource.label !== 'Server 3'} dvr={activeSource.label === 'Server 3'} showId={effectiveShowId} />
                     : activeSource.type === 'youtube'
                       ? <div className="live-yt-frame"><EmbedPlayer key={`em-${safeIdx}-${activeSource.type}`} type={activeSource.type} source={activeSource.url} title={unlocked.title} watermark={unlocked.watermark} hideSeekButtons isLive /></div>
                       : <EmbedPlayer key={`em-${safeIdx}-${activeSource.type}`} type={activeSource.type} source={activeSource.url} title={unlocked.title} watermark={unlocked.watermark} hideSeekButtons isLive />}

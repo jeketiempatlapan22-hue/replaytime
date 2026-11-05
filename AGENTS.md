@@ -16,3 +16,5 @@
 - get_my_memberships also returns membership_tokens whose phone matches the user's profile phone, so admin/reseller-made memberships unlock watch buttons on the account.
 - Store Server 2 links on active_shows.server2_url and deliver them only through unlock-live after access is verified, so direct m3u8 links (no proxy) are never publicly readable.
 - Fill active_shows.server2_url (SForge master) and server3_url (SForge master-final) via _shared/sforge.ts from unlock-live (when empty) and the manage-live sforge_sync action, never overwriting non-SForge manual links, so admins never copy links from the SForge dashboard.
+
+- Server 3 (SForge master-final) runs HlsPlayer in `dvr` mode on Live (full back buffer, no edge jumps) and is the default first replay source before YouTube, so viewers can rewind live and replays play without manual setup.
