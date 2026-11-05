@@ -47,7 +47,7 @@ export function buildSources(source: ReplaySource | null, replay: ReplayRow): Pl
   if (source.youtube_id && !list.some(s => s.type === 'youtube' && s.url === source.youtube_id)) {
     list.push({
       id: 'legacy-yt',
-      label: list.length === 0 ? 'YouTube' : `YouTube ${list.filter(s => s.type === 'youtube').length + 1}`,
+      label: !list.some(s => s.type === 'youtube') ? 'YouTube' : `YouTube ${list.filter(s => s.type === 'youtube').length + 1}`,
       type: 'youtube',
       url: source.youtube_id,
       is_default: list.length === 0,
