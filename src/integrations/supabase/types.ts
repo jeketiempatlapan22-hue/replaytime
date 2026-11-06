@@ -2087,6 +2087,7 @@ export type Database = {
         Row: {
           bundle_id: string
           created_at: string
+          expires_at: string | null
           id: string
           label: string
           max_devices: number
@@ -2102,6 +2103,7 @@ export type Database = {
         Insert: {
           bundle_id: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           label?: string
           max_devices?: number
@@ -2117,6 +2119,7 @@ export type Database = {
         Update: {
           bundle_id?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           label?: string
           max_devices?: number
@@ -2409,6 +2412,36 @@ export type Database = {
           claimed_at?: string
           dedup_key?: string
           sent?: boolean
+        }
+        Relationships: []
+      }
+      yearly_passwords: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          label: string
+          password: string
+          paused: boolean
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          label?: string
+          password: string
+          paused?: boolean
+          starts_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          label?: string
+          password?: string
+          paused?: boolean
+          starts_at?: string
         }
         Relationships: []
       }
@@ -2945,6 +2978,7 @@ export type Database = {
       }
       am_i_blocked: { Args: never; Returns: boolean }
       auto_live_sync: { Args: never; Returns: undefined }
+      bundle_expiry_for_shows: { Args: { _ids: string[] }; Returns: string }
       check_login_lock: {
         Args: { _identifier: string }
         Returns: {
@@ -3295,6 +3329,7 @@ export type Database = {
         }[]
       }
       rotate_membership_passwords: { Args: never; Returns: number }
+      show_start_at: { Args: { _show_id: string }; Returns: string }
       sync_show_bundle: { Args: never; Returns: undefined }
     }
     Enums: {

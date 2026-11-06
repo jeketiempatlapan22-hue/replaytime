@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { GRANT_TTL_FREE, signGrant } from "../_shared/stream-grant.ts";
 import { findMembershipByPassword, membershipPasswordOk } from "../_shared/membership-password.ts";
 import { bundlePasswordValidForShow } from "../_shared/bundle.ts";
+import { yearlyPasswordOk } from "../_shared/yearly-password.ts";
 import { isRequestBlocked } from "../_shared/user-block.ts";
 import { syncShowsWithSforge } from "../_shared/sforge.ts";
 
@@ -353,6 +354,7 @@ Deno.serve(async (req) => {
             .from("master_passwords").select("password,paused,month").in("month", [...months]);
           valid = (masters || []).some((m: any) => m.paused !== true && same(m.password));
         }
+        if (!valid) valid = await yearlyPasswordOk(supabase, String(password));
         if (!valid) {
           // Sandi bundel show (huruf besar/kecil sama) untuk show yang ada di bundelnya.
           valid = await bundlePasswordValidForShow(supabase, String(show.id), String(password));
@@ -439,6 +441,7 @@ Deno.serve(async (req) => {
           .from("master_passwords").select("password,paused").eq("month", monthKey);
         valid = (masters || []).some((m: any) => m.paused !== true && m.password === password);
       }
+      if (!valid) valid = await yearlyPasswordOk(supabase, String(password));
       await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: valid });
       if (!valid) return json({ valid: false, reason: "bad_password" });
       return json({

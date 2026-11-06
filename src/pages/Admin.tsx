@@ -37,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import YearlyPasswordsAdmin from '@/components/admin/YearlyPasswordsAdmin';
 import { addReplay, deleteReplay, updateReplay, getReplaysAdmin, getAllMasterPasswords, setMasterPassword, setMasterPasswordPaused, deleteMasterPassword, getSettings, setSetting, setReplayAccessToken, type ReplayRow, type MasterPasswordRow, type PlaylistSource } from '@/lib/store';
 import { THEME_OPTIONS, type ThemeType } from '@/components/ThemedBackground';
 import ImagePicker from '@/components/ImagePicker';
@@ -1471,6 +1472,7 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+            <YearlyPasswordsAdmin />
           </TabsContent>
         </Tabs>
         <datalist id="member-names">

@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     replayPassword = String(replay?.password || '');
   }
   const showStart = new Date(`${s.show_date}T${String(s.show_time).slice(0, 8)}+07:00`);
-  const expiresAt = new Date(showStart.getTime() + 8 * 3600000);
+  const expiresAt = new Date(showStart.getTime() + 24 * 3600000);
   const { error } = await admin.from('active_show_tokens').insert({ show_id: s.id, token, kind: 'personal', max_devices: 1, label: `admin:${label}`, expires_at: expiresAt.toISOString() });
   if (error) return json({ error: 'create_failed', detail: error.message }, 500);
   const link = `${origin}/live?show=${s.id}&t=${token}`;

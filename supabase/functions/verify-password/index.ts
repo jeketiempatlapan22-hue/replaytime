@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { bundlePasswordValidForReplay } from "../_shared/bundle.ts";
 import { isRequestBlocked } from "../_shared/user-block.ts";
+import { yearlyPasswordOk } from "../_shared/yearly-password.ts";
 import { findMembershipByPassword, membershipPasswordOk, membershipReplayPasswordOk } from "../_shared/membership-password.ts";
 
 const corsHeaders = {
@@ -87,6 +88,11 @@ Deno.serve(async (req) => {
       return json({ valid: true });
     }
 
+    if (await yearlyPasswordOk(supabase, password)) {
+      await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: true });
+      return json({ valid: true, via: 'yearly' });
+    }
+
     // Sandi bundel show (sandi lama maupun yang berlaku sekarang).
     if (await bundlePasswordValidForReplay(supabase, replay_id, password)) {
       await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: true });
@@ -102,7 +108,7 @@ Deno.serve(async (req) => {
       if (!ok && mt && mt.includes_replays && replay.date) {
         const rt = new Date(`${replay.date}T12:00:00+07:00`).getTime();
         const st = mt.starts_at ? new Date(mt.starts_at).getTime() - 86400000 : 0;
-        const et = mt.expires_at ? new Date(mt.expires_at).getTime() + 86400000 : Number.POSITIVE_INFINITY;
+        const et = mt.expires_at ? new Date(mt.expires_at).getTime() : Number.POSITIVE_INFINITY;
         ok = rt >= st && rt <= et;
       }
       if (ok) {

@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
 
   // expires_at = jadwal show + 8 jam (akhir window auto-schedule live, WIB +07:00)
   const showStart = new Date(`${s.show_date}T${String(s.show_time).slice(0, 8)}+07:00`);
-  const expiresAt = new Date(showStart.getTime() + 8 * 60 * 60 * 1000);
+  const expiresAt = new Date(showStart.getTime() + 24 * 60 * 60 * 1000);
 
   const { error } = await admin.from('active_show_tokens').insert({
     show_id: s.id, token, kind: 'personal', max_devices: 1, label, expires_at: expiresAt.toISOString(),

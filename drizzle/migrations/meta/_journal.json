@@ -57,6 +57,13 @@
       "when": 1793788486757,
       "tag": "0007_replay_from_sforge_master_final",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793970509156,
+      "tag": "0008_token_expiry_rules_yearly_passwords",
+      "breakpoints": true
     }
   ]
 }
