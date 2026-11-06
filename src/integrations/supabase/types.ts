@@ -995,6 +995,47 @@ export type Database = {
         }
         Relationships: []
       }
+      live_message_senders: {
+        Row: {
+          browser_id: string
+          created_at: string
+          created_by: string
+          message_id: string
+          phone: string
+          token_kind: string
+          token_tail: string
+          user_id: string | null
+        }
+        Insert: {
+          browser_id?: string
+          created_at?: string
+          created_by?: string
+          message_id: string
+          phone?: string
+          token_kind?: string
+          token_tail?: string
+          user_id?: string | null
+        }
+        Update: {
+          browser_id?: string
+          created_at?: string
+          created_by?: string
+          message_id?: string
+          phone?: string
+          token_kind?: string
+          token_tail?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_message_senders_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "live_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_messages: {
         Row: {
           browser_id: string
@@ -1005,7 +1046,9 @@ export type Database = {
           name: string
           pinned: boolean
           reply_to_id: string | null
+          sender_role: string
           show_id: string | null
+          user_id: string | null
         }
         Insert: {
           browser_id?: string
@@ -1016,7 +1059,9 @@ export type Database = {
           name?: string
           pinned?: boolean
           reply_to_id?: string | null
+          sender_role?: string
           show_id?: string | null
+          user_id?: string | null
         }
         Update: {
           browser_id?: string
@@ -1027,7 +1072,9 @@ export type Database = {
           name?: string
           pinned?: boolean
           reply_to_id?: string | null
+          sender_role?: string
           show_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2466,6 +2513,7 @@ export type Database = {
         Args: { _ids?: string[]; _kind: string }
         Returns: number
       }
+      admin_bulk_reset_devices: { Args: { _kind: string }; Returns: Json }
       admin_clear_live_messages: { Args: never; Returns: number }
       admin_clear_reseller_copy_log: {
         Args: { _phone?: string }
@@ -2631,6 +2679,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_get_chat_sender: { Args: { _message_id: string }; Returns: Json }
       admin_get_membership_packages: {
         Args: never
         Returns: {
@@ -2833,6 +2882,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_moderators: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+          username: string
+        }[]
+      }
       admin_list_show_tokens: {
         Args: { _q?: string; _status?: string }
         Returns: {
@@ -2925,6 +2982,10 @@ export type Database = {
       admin_set_bundle_show: {
         Args: { _excluded: boolean; _show_id: string }
         Returns: undefined
+      }
+      admin_set_moderator: {
+        Args: { _on: boolean; _user_id: string }
+        Returns: boolean
       }
       admin_set_proof_handled: {
         Args: { _handled: boolean; _id: string }
@@ -3134,6 +3195,12 @@ export type Database = {
         Returns: undefined
       }
       mark_wa_sent: { Args: { _key: string }; Returns: undefined }
+      mod_block_chat: {
+        Args: { _browser_id: string; _name: string; _reason?: string }
+        Returns: boolean
+      }
+      mod_delete_message: { Args: { _message_id: string }; Returns: boolean }
+      mod_unblock_chat: { Args: { _browser_id: string }; Returns: boolean }
       norm_phone: { Args: { _p: string }; Returns: string }
       phone_exists: { Args: { _phone: string }; Returns: boolean }
       prune_old_logs: { Args: never; Returns: undefined }
