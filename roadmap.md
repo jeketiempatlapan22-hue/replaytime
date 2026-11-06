@@ -1,7 +1,9 @@
-# Roadmap
+# Roadmap — Perintah_Website_A_v2.txt
 
-- [x] Mode perbaikan per website (saklar terpisah A/B)
-- [x] Menu Show tidak bisa dibuka — cari & perbaiki; cek semua menu
-- [x] Member langsung dapat tombol Tonton (akun + HP, membership dari admin/reseller)
-- [x] Kolom membership di Profil: sandi, link token (salin), durasi
-- [x] Tombol "Masukkan Sandi" kembali di kartu show, langsung ke Live/Replay (Website B)
+- [ ] Migrasi 1: tambah nilai 'moderator' ke enum app_role
+- [ ] Migrasi 2: kolom live_messages.sender_role + user_id, tabel live_message_senders (privat), fungsi admin_bulk_reset_devices, admin_get_chat_sender, admin_set_moderator, admin_list_moderators, mod_delete_message, mod_block_chat, mod_unblock_chat
+- [ ] Edge function live-chat-send (kirim pesan lewat server, catat pengirim privat, tolak browser diblokir)
+- [ ] LiveChat.tsx: kirim via live-chat-send, banner Admin/Moderator, aksi moderator (hapus/blokir), dialog info pengirim untuk admin
+- [ ] UserManagement.tsx: kartu Reset Massal Perangkat + daftar moderator
+- [ ] Verifikasi build + test, commit
+- [ ] File perintah untuk Website B (salin tampilan chat)

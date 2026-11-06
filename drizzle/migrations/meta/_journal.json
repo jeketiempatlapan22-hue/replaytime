@@ -64,6 +64,13 @@
       "when": 1793970509156,
       "tag": "0008_token_expiry_rules_yearly_passwords",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793972178652,
+      "tag": "0009_app_role_add_moderator",
+      "breakpoints": true
     }
   ]
 }
