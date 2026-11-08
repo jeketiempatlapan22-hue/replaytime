@@ -5,11 +5,14 @@
 - [x] Edge function live-chat-send (kirim pesan lewat server, catat pengirim privat, tolak browser diblokir)
 - [x] LiveChat.tsx: kirim via live-chat-send, banner Admin/Moderator, aksi moderator (hapus/blokir), dialog info pengirim untuk admin
 - [x] UserManagement.tsx: kartu Reset Massal Perangkat + daftar moderator
-- [ ] Verifikasi build + test, commit
+- [x] Verifikasi build + test, commit
 - [x] File perintah untuk Website B (salin tampilan chat)
 
 ## DOKU menggantikan Pakasir
-- [ ] Verifikasi API QRIS DOKU dan persyaratan akun.
-- [ ] Ganti pembuatan QRIS, pemeriksaan pembayaran, webhook, dan polling untuk semua produk.
-- [ ] Ganti pengaturan pembayaran dan tampilan pengguna ke DOKU tanpa fallback Pakasir.
-- [ ] Hubungkan kredensial DOKU, uji pembayaran, deploy, dan commit.
+- [x] Verifikasi API QRIS DOKU dan persyaratan akun.
+- [x] Ganti pembuatan QRIS, pemeriksaan pembayaran, webhook, dan polling untuk semua produk.
+- [x] Ganti pengaturan pembayaran dan tampilan pengguna ke DOKU tanpa fallback Pakasir.
+- [x] Deploy fungsi DOKU dan uji aturan verifikasi pembayaran.
+- [ ] Hubungkan kredensial DOKU dan uji pembayaran nyata — menunggu aktivasi QRIS SNAP dan data merchant DOKU.
+- [ ] Verifikasi notifikasi QRIS merchant secara langsung — menunggu panduan/konfigurasi notifikasi DOKU untuk akun ini.
+- [x] Jelaskan asal data tambahan DOKU saat dashboard hanya menampilkan Client ID dan Secret Key.
