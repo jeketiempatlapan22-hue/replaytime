@@ -7,3 +7,9 @@
 - [x] UserManagement.tsx: kartu Reset Massal Perangkat + daftar moderator
 - [ ] Verifikasi build + test, commit
 - [x] File perintah untuk Website B (salin tampilan chat)
+
+## DOKU menggantikan Pakasir
+- [ ] Verifikasi API QRIS DOKU dan persyaratan akun.
+- [ ] Ganti pembuatan QRIS, pemeriksaan pembayaran, webhook, dan polling untuk semua produk.
+- [ ] Ganti pengaturan pembayaran dan tampilan pengguna ke DOKU tanpa fallback Pakasir.
+- [ ] Hubungkan kredensial DOKU, uji pembayaran, deploy, dan commit.

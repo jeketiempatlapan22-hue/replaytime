@@ -1,12 +1,10 @@
-import { pakasirCreateQrisCompat } from '../_shared/pakasir.ts';
-// Create a Pakasir QRIS order to top-up coins for the authenticated user.
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { dokuCreateQrisCompat, dokuConfiguration } from '../_shared/doku.ts';
+// Create a DOKU QRIS order to top-up coins for the authenticated user.
 // kind='coin_topup' so webhook/poll credit coins instead of issuing a token.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+
 
 function normalizePhone(raw: string) {
   const d = String(raw || '').replace(/\D/g, '');
@@ -17,17 +15,18 @@ function normalizePhone(raw: string) {
   return d;
 }
 function validPhone(p: string) { return /^628\d{8,11}$/.test(p); }
-function genOrderId() { return `tc${Date.now().toString(36)}${crypto.randomUUID().replace(/-/g, '').slice(0, 18)}`; }
+function genOrderId() { return `dktc${Date.now().toString(36)}${crypto.randomUUID().replace(/-/g, '').slice(0, 18)}`; }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    if (!dokuConfiguration().configured) return new Response(JSON.stringify({ error: 'DOKU belum diaktifkan. Hubungi admin untuk pembayaran.' }), { status: 503, headers: corsHeaders });
     const authHeader = req.headers.get('Authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '');
     if (!token) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
 
-    const url = Deno.env.get('SUPABASE_URL')!;
-    const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const url = (Deno.env.get('SUPABASE_URL') || '');
+    const anon = (Deno.env.get('SUPABASE_ANON_KEY') || '');
     const userClient = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } } });
     const { data: userData } = await userClient.auth.getUser();
     const user = userData?.user;
@@ -39,10 +38,10 @@ Deno.serve(async (req) => {
     if (!validPhone(phone)) return new Response(JSON.stringify({ error: 'invalid_phone' }), { status: 400, headers: corsHeaders });
     if (!packageId) return new Response(JSON.stringify({ error: 'missing_package' }), { status: 400, headers: corsHeaders });
 
-    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const slug = Deno.env.get('PAKASIR_PROJECT_SLUG');
-    const apiKey = Deno.env.get('PAKASIR_API_KEY') || '';
-    if (!slug) return new Response(JSON.stringify({ error: 'pakasir_not_configured' }), { status: 500, headers: corsHeaders });
+    const admin = createClient(url, (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''));
+    const slug = 'doku';
+    const apiKey = 'server-managed' || '';
+    if (!slug) return new Response(JSON.stringify({ error: 'doku_not_configured' }), { status: 500, headers: corsHeaders });
 
     const { data: pkg } = await admin.from('coin_packages').select('*').eq('id', packageId).eq('enabled', true).maybeSingle();
     if (!pkg) return new Response(JSON.stringify({ error: 'package_not_found' }), { status: 404, headers: corsHeaders });
@@ -51,18 +50,18 @@ Deno.serve(async (req) => {
     if (amount < 100 || coins <= 0) return new Response(JSON.stringify({ error: 'invalid_package' }), { status: 400, headers: corsHeaders });
 
     const orderId = genOrderId();
-    const qrUrl = `https://app.pakasir.com/pay/${slug}/${orderId}?amount=${amount}&qris_only=1`;
+    const qrUrl = '';
     let qrString = ''; let totalPayment = amount; let expiredAt = '';
     try {
-      const pres = await pakasirCreateQrisCompat(slug, orderId, amount, apiKey);
+      const pres = await dokuCreateQrisCompat(slug, orderId, amount, apiKey);
       const pjson: any = await pres.json().catch(() => ({}));
       const p = pjson?.payment || {};
       qrString = String(p.payment_number || '');
       totalPayment = Number(p.total_payment || amount);
       expiredAt = String(p.expired_at || '');
-      if (!pres.ok || !qrString) return new Response(JSON.stringify({ error: 'pakasir_create_failed', detail: pjson }), { status: 502, headers: corsHeaders });
+      if (!pres.ok || !qrString) return new Response(JSON.stringify({ error: 'doku_create_failed', detail: pjson }), { status: 502, headers: corsHeaders });
     } catch (e) {
-      return new Response(JSON.stringify({ error: 'pakasir_unreachable', detail: String(e) }), { status: 502, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'doku_unreachable', detail: String(e) }), { status: 502, headers: corsHeaders });
     }
 
     const { data: order, error: oerr } = await admin.from('orders').insert({

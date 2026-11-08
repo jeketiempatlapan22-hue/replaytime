@@ -81,7 +81,7 @@ export default function Koin() {
         const { data: row } = await supabase.from('orders').select('status,token_sent_at').eq('id', r.order_id).maybeSingle();
         let checked: any = null;
         try {
-          const { data: chk } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: r.order_id } });
+          const { data: chk } = await supabase.functions.invoke('check-doku-status', { body: { order_id: r.order_id } });
           checked = chk;
         } catch { /* ignore */ }
         if (row?.status === 'paid' || checked?.status === 'paid') {

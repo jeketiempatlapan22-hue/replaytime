@@ -51,7 +51,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
   const [qrString, setQrString] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [totalPayment, setTotalPayment] = useState<number>(0);
-  const [pakasirOrderId, setPakasirOrderId] = useState<string>('');
+  const [pakasirOrderId, setDOKUOrderId] = useState<string>('');
   const [accessToken, setAccessToken] = useState<string>('');
   const [waSent, setWaSent] = useState<boolean | null>(null);
   const [createdAt, setCreatedAt] = useState<number>(0);
@@ -133,7 +133,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
       setOrderId(null);
       setQrUrl(''); setQrString(''); setQrDataUrl(''); setTotalPayment(0);
       setLiveAmount(null);
-      setPakasirOrderId('');
+      setDOKUOrderId('');
       setAccessToken('');
       setWaSent(null);
       setCreatedAt(0);
@@ -186,7 +186,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
       })
       .subscribe();
     channelRef.current = ch;
-    // Poll agresif: DB + server cek Pakasir langsung agar token cepat keluar meski webhook terlambat.
+    // Poll agresif: DB + server cek DOKU langsung agar token cepat keluar meski webhook terlambat.
     let tick = 0;
     const poll = setInterval(async () => {
       tick++;
@@ -201,7 +201,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
         return;
       }
       try {
-        const { data: chk } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: orderId } });
+        const { data: chk } = await supabase.functions.invoke('check-doku-status', { body: { order_id: orderId } });
         const c = chk as any;
         if (c?.status === 'paid' && c?.access_token) {
           setAccessToken(c.access_token);
@@ -242,7 +242,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
     if (useStaticQris) { setStatus('static_qris'); return; }
     setStatus('creating');
     try {
-      const { data, error } = await supabase.functions.invoke('create-pakasir-order', {
+      const { data, error } = await supabase.functions.invoke('create-doku-order', {
         body: {
           phone: norm,
           show_id: (kind === 'replay_only' || kind === 'bundle') ? undefined : showId,
@@ -257,7 +257,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
       if (!r?.ok) throw new Error(r?.error || 'Gagal membuat order');
       setOrderId(r.order_id);
       rememberPendingOrder(r.order_id, { kind, showId: showId || null, replayId: replayId || null });
-      setPakasirOrderId(r.pakasir_order_id);
+      setDOKUOrderId(r.pakasir_order_id);
       setQrUrl(r.qr_url || '');
       setQrString(r.qr_string || '');
       // Server adalah sumber kebenaran harga: tampilkan nominal yang benar-benar
@@ -460,7 +460,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1 text-[11px] text-primary hover:underline"
                 >
-                  <ExternalLink className="w-3 h-3" /> Buka di halaman Pakasir
+                  <ExternalLink className="w-3 h-3" /> Buka di halaman DOKU
                 </a>
               )}
             </div>

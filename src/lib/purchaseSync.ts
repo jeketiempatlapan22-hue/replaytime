@@ -5,7 +5,7 @@ import { getShowPurchase, setShowPurchase, getReplayPurchase, setReplayPurchase 
 
 let lastRun = 0;
 
-// Pesanan QRIS yang belum terkonfirmasi di perangkat ini. Dicek ulang ke Pakasir
+// Pesanan QRIS yang belum terkonfirmasi di perangkat ini. Dicek ulang ke DOKU
 // (lewat server) setiap sinkronisasi agar pembayaran tidak terlewat walau dialog ditutup.
 const PENDING_KEY = 'replaytime-pending-orders';
 interface PendingOrder { id: string; kind: string; showId: string | null; replayId: string | null; at: number }
@@ -28,7 +28,7 @@ async function checkPendingOrders(): Promise<boolean> {
   let changed = false;
   for (const p of list) {
     try {
-      const { data } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: p.id } });
+      const { data } = await supabase.functions.invoke('check-doku-status', { body: { order_id: p.id } });
       const c = data as any;
       if (c?.status === 'paid' && p.kind === 'coin_topup') {
         // Server sudah mengkredit koin saat cek status; cukup beri tahu halaman.

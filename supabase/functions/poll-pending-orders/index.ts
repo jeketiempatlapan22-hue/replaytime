@@ -1,16 +1,14 @@
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
-// Background poller: scans pending orders, queries Pakasir, marks paid + delivers WA.
+// Background poller: scans pending orders, queries DOKU, marks paid + delivers WA.
 // Triggered by pg_cron every minute. Idempotent — safe to re-run.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { waDedupKey, claimWaSend, markWaSent } from '../_shared/wa-guard.ts';
 import { sendTelegramByPhone } from '../_shared/telegram.ts';
-import { verifyPakasirPaidStrict, PAID_STATUSES as STRICT_PAID_STATUSES } from '../_shared/pakasir.ts';
+import { verifyDokuPaidStrict, PAID_STATUSES as STRICT_PAID_STATUSES } from '../_shared/doku.ts';
 import { issueBundleToken } from '../_shared/bundle.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+
 
 function normalizePhone(raw: string) {
   const d = String(raw).replace(/\D/g, '');
@@ -27,8 +25,8 @@ function genToken() {
 
 const PAID_STATUSES = STRICT_PAID_STATUSES;
 
-async function verifyPakasirPaid(apiKey: string, slug: string, pakasirOrderId: string, amount: number) {
-  return await verifyPakasirPaidStrict(apiKey, slug, pakasirOrderId, amount, 6000);
+async function verifyDokuPaid(apiKey: string, slug: string, pakasirOrderId: string, amount: number) {
+  return await verifyDokuPaidStrict(apiKey, slug, pakasirOrderId, amount, 6000);
 }
 
 // Provision a fresh single-device token row for this paid order.
@@ -42,7 +40,7 @@ async function ensurePurchaseToken(admin: ReturnType<typeof createClient>, order
       userId: order.user_id || null,
       phone: order.user_phone || null,
       orderId: order.id || null,
-      label: `pakasir:${order.user_phone || ''}`.slice(0, 120),
+      label: `doku:${order.user_phone || ''}`.slice(0, 120),
     });
     return issued?.token || order.access_token || '';
   }
@@ -66,13 +64,13 @@ async function ensurePurchaseToken(admin: ReturnType<typeof createClient>, order
   if (order.show_id && !order.replay_id) {
     await admin.from('active_show_tokens').insert({
       show_id: order.show_id, token: newTok,
-      label: `pakasir:${order.user_phone || ''}`.slice(0, 120),
+      label: `doku:${order.user_phone || ''}`.slice(0, 120),
       kind: 'personal', max_devices: 1, revoked: false,
     });
   } else if (order.replay_id) {
     await admin.from('replay_personal_tokens').insert({
       replay_id: order.replay_id, token: newTok,
-      label: `pakasir:${order.user_phone || ''}`.slice(0, 120),
+      label: `doku:${order.user_phone || ''}`.slice(0, 120),
       max_devices: 1, revoked: false,
     });
   }
@@ -166,7 +164,7 @@ async function processOrder(admin: ReturnType<typeof createClient>, order: any, 
   if (!order.pakasir_order_id && order.status !== 'paid') return { id: order.id, skipped: 'no_pakasir_id' };
 
   if (order.status !== 'paid' && order.pakasir_order_id && Number(order.amount || 0) >= 100) {
-    const verified = await verifyPakasirPaid(apiKey, slug, order.pakasir_order_id, Number(order.amount || 0));
+    const verified = await verifyDokuPaid(apiKey, slug, order.pakasir_order_id, Number(order.amount || 0));
     if (!verified.paid) {
       if (verified.status === 'canceled' || verified.status === 'cancelled' || verified.status === 'expired' || verified.status === 'failed') {
         await admin.from('orders').update({ status: verified.status }).eq('id', order.id);
@@ -313,7 +311,7 @@ async function processOrder(admin: ReturnType<typeof createClient>, order: any, 
     await admin.from('token_deliveries').insert({
       phone: order.user_phone, replay_id: order.replay_id, replay_title: order.item_title,
       order_id: order.id, access_token: accessToken, link,
-      source: 'pakasir-poll', requested_by: 'poll-pending-orders-telegram',
+      source: 'doku-poll', requested_by: 'poll-pending-orders-telegram',
     });
     return { id: order.id, status: 'paid', telegram: tgSent };
   }
@@ -330,7 +328,7 @@ async function processOrder(admin: ReturnType<typeof createClient>, order: any, 
   await admin.from('token_deliveries').insert({
     phone: order.user_phone, replay_id: order.replay_id, replay_title: order.item_title,
     order_id: order.id, access_token: accessToken, link,
-    source: 'pakasir-poll', requested_by: 'poll-pending-orders',
+    source: 'doku-poll', requested_by: 'poll-pending-orders',
   });
   await admin.from('wa_outbox').insert({
     phone: order.user_phone, message, status: sent.ok ? 'sent' : 'failed',
@@ -354,17 +352,11 @@ Deno.serve(async (req) => {
   const PUBLISHABLES = (Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const accepted = [SERVICE_ROLE, ANON, PUBLISHABLE, ...PUBLISHABLES].filter(Boolean);
   let allowed = !!bearer && accepted.includes(bearer);
-  if (!allowed && bearer.split('.').length === 3) {
-    try {
-      const payload = JSON.parse(atob(bearer.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      allowed = payload?.role === 'anon' || payload?.role === 'service_role';
-    } catch { allowed = false; }
-  }
   if (!allowed && bearer) {
     try {
-      const userClient = createClient(Deno.env.get('SUPABASE_URL')!, ANON, { global: { headers: { Authorization: authHeader } } });
+      const userClient = createClient((Deno.env.get('SUPABASE_URL') || ''), ANON, { global: { headers: { Authorization: authHeader } } });
       const { data: ud } = await userClient.auth.getUser();
-      const adminCheck = createClient(Deno.env.get('SUPABASE_URL')!, SERVICE_ROLE);
+      const adminCheck = createClient((Deno.env.get('SUPABASE_URL') || ''), SERVICE_ROLE);
       const { data: isAdmin } = await adminCheck.rpc('has_role', { _user_id: ud?.user?.id, _role: 'admin' });
       allowed = !!isAdmin;
     } catch { allowed = false; }
@@ -373,13 +365,13 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  const apiKey = Deno.env.get('PAKASIR_API_KEY');
-  const slug = Deno.env.get('PAKASIR_PROJECT_SLUG');
+  const apiKey = 'server-managed';
+  const slug = 'doku';
   if (!apiKey || !slug) {
-    return new Response(JSON.stringify({ error: 'pakasir not configured' }), { status: 503, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: 'DOKU belum diaktifkan. Hubungi admin.' }), { status: 503, headers: corsHeaders });
   }
 
-  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const admin = createClient((Deno.env.get('SUPABASE_URL') || ''), (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''));
   const { data: settings } = await admin
     .from('site_settings').select('key,value').in('key', ['site_origin', 'wa_message_template', 'wa_show_template']);
   const sm = new Map((settings ?? []).map((s) => [s.key, s.value]));
@@ -427,7 +419,7 @@ Deno.serve(async (req) => {
   }
 
   // === MEMBERSHIP ORDERS (reserved QRIS yang webhook-nya tidak sampai) ===
-  // Bila sudah terbayar di Pakasir → finalize + kirim WA. Idempotent.
+  // Bila sudah terbayar di DOKU → finalize + kirim WA. Idempotent.
   //
   // Auto-retry dengan batas terukur:
   // - Maks 5 percobaan pengiriman WA per order.
@@ -470,7 +462,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const verified = await verifyPakasirPaid(apiKey, slug, mo.pakasir_order_id, Number(mo.amount || 0));
+        const verified = await verifyDokuPaid(apiKey, slug, mo.pakasir_order_id, Number(mo.amount || 0));
         if (!verified.paid) { memResults.push({ id: mo.id, status: verified.status || 'pending' }); continue; }
 
         let tok: any = null;
@@ -535,7 +527,7 @@ Deno.serve(async (req) => {
           await admin.from('token_deliveries').insert({
             phone: mo.phone, replay_id: null, replay_title: `Membership • ${tok.package_name}`,
             order_id: null, access_token: tok.token, link,
-            source: 'pakasir-poll', requested_by: 'poll-pending-orders-membership',
+            source: 'doku-poll', requested_by: 'poll-pending-orders-membership',
           });
         }
         memResults.push({ id: mo.id, finalized: !mo.membership_token_id, sent: sent.ok, attempts: attempts + 1 });

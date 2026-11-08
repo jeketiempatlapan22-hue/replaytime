@@ -1,11 +1,9 @@
-import { verifyPakasirPaidStrict } from '../_shared/pakasir.ts';
-// Polls Pakasir for a reseller bill. If paid, marks bill paid + wipes copy log.
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { verifyDokuPaidStrict } from '../_shared/doku.ts';
+// Polls DOKU for a reseller bill. If paid, marks bill paid + wipes copy log.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -18,9 +16,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'missing_params' }), { status: 400, headers: corsHeaders });
     }
 
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const slug = Deno.env.get('PAKASIR_PROJECT_SLUG')!;
-    const apiKey = Deno.env.get('PAKASIR_API_KEY')!;
+    const admin = createClient((Deno.env.get('SUPABASE_URL') || ''), (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''));
+    const slug = 'doku';
+    const apiKey = 'server-managed';
 
     const { data: ok } = await admin.rpc('reseller_verify', { _phone: phone, _pin: pin });
     if (!ok) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
@@ -40,7 +38,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const v = await verifyPakasirPaidStrict(apiKey, slug, bill.pakasir_order_id, Number(bill.amount));
+    const v = await verifyDokuPaidStrict(apiKey, slug, bill.pakasir_order_id, Number(bill.amount));
     const ps = v.status;
     const paid = v.paid;
 

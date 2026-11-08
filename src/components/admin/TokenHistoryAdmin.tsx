@@ -99,8 +99,8 @@ export default function TokenHistoryAdmin() {
                       <button title="Salin nomor" onClick={() => copy(item.phone)} className="text-muted-foreground hover:text-primary">
                         <Copy className="w-3 h-3" />
                       </button>
-                      <Badge variant={item.source === 'pakasir' ? 'default' : 'secondary'} className="text-[10px]">
-                        {item.source === 'pakasir' ? '💳 Pakasir' : '🤖 Bot'}
+                      <Badge variant={['pakasir', 'doku', 'doku-poll'].includes(item.source) ? 'default' : 'secondary'} className="text-[10px]">
+                        {item.source === 'pakasir' ? '💳 Pembayaran lama' : ['doku', 'doku-poll'].includes(item.source) ? '💳 DOKU' : '🤖 Bot'}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">

@@ -734,7 +734,7 @@ export default function Admin() {
                 { v: 'bundle', label: 'Bundel Show', Icon: Key },
                 { v: 'mb_proofs', label: 'Bukti Transaksi', Icon: Upload },
                 { v: 'replay_off', label: 'Replay Off', Icon: Eye },
-                { v: 'pakasir', label: 'Pakasir Webhook', Icon: Settings },
+                { v: 'pakasir', label: 'Pembayaran DOKU', Icon: Settings },
                 { v: 'coins', label: 'Koin', Icon: Sparkles },
                 { v: 'game', label: 'Game & Hadiah', Icon: Sparkles },
                 { v: 'users', label: 'Manajemen User', Icon: Users },
@@ -761,7 +761,7 @@ export default function Admin() {
           </SheetContent>
         </Sheet>
         <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="shrink-0" title="Beranda"><ArrowLeft className="w-5 h-5" /></Button>
-        <h1 className="text-base sm:text-xl font-bold font-sans text-foreground flex-1 min-w-0 truncate">Admin · {(['reseller_audit', 'reseller_billing', 'reseller_pricing'].includes(activeTab) ? 'Reseller' : ['membership', 'mb_users', 'mb_packages'].includes(activeTab) ? 'Membership' : ['security', 'ip_manager'].includes(activeTab) ? 'Keamanan' : ({ replays: 'Replay', shows: 'Streaming Show', members: 'Member', bot: 'Bot WA', history: 'Riwayat', live_monitor: 'Live & Buat Link', token_factory: 'Token Factory', bundle: 'Bundel Show', mb_proofs: 'Bukti Transaksi', replay_off: 'Replay Off', pakasir: 'Pakasir Webhook', coins: 'Koin', game: 'Game & Hadiah', users: 'Manajemen User', preview: 'Preview', comments: 'Komentar', settings: 'Setelan' } as Record<string, string>)[activeTab])}</h1>
+        <h1 className="text-base sm:text-xl font-bold font-sans text-foreground flex-1 min-w-0 truncate">Admin · {(['reseller_audit', 'reseller_billing', 'reseller_pricing'].includes(activeTab) ? 'Reseller' : ['membership', 'mb_users', 'mb_packages'].includes(activeTab) ? 'Membership' : ['security', 'ip_manager'].includes(activeTab) ? 'Keamanan' : ({ replays: 'Replay', shows: 'Streaming Show', members: 'Member', bot: 'Bot WA', history: 'Riwayat', live_monitor: 'Live & Buat Link', token_factory: 'Token Factory', bundle: 'Bundel Show', mb_proofs: 'Bukti Transaksi', replay_off: 'Replay Off', pakasir: 'Pembayaran DOKU', coins: 'Koin', game: 'Game & Hadiah', users: 'Manajemen User', preview: 'Preview', comments: 'Komentar', settings: 'Setelan' } as Record<string, string>)[activeTab])}</h1>
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Button size="sm" onClick={() => { resetForm(); setShowAddDialog(true); }} className="text-xs sm:text-sm">
             <Plus className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Tambah</span>
@@ -964,7 +964,7 @@ export default function Admin() {
                   <div>
                     <Label>Harga Show (Rp)</Label>
                     <Input type="number" min={0} value={showForm.price_show} onChange={e => setShowForm({ ...showForm, price_show: Number(e.target.value) })} placeholder="0" />
-                    <p className="text-[11px] text-muted-foreground mt-1">Nominal QRIS Pakasir saat user beli show.</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Nominal QRIS DOKU saat user beli show.</p>
                   </div>
                   <div>
                     <Label>Harga Replay (Rp)</Label>
@@ -985,7 +985,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div>
-                  <Label>Pakasir Amount (Rp) — fallback opsional</Label>
+                  <Label>Nominal QRIS (Rp) — fallback opsional</Label>
                   <Input type="number" min={0} value={showForm.pakasir_amount} onChange={e => setShowForm({ ...showForm, pakasir_amount: Number(e.target.value) })} placeholder="Kosongkan jika tidak perlu" />
                   <p className="text-[11px] text-muted-foreground mt-1">Hanya dipakai bila Harga Show / Harga Replay di atas kosong.</p>
                 </div>
@@ -1424,7 +1424,7 @@ export default function Admin() {
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div className="pr-3">
                     <Label className="block">Paksa pakai QRIS Statis</Label>
-                    <p className="text-[11px] text-muted-foreground mt-1">Jika aktif, semua pembelian show langsung menampilkan QRIS statis + tombol Hubungi Admin (tanpa membuat QRIS dinamis Pakasir).</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Jika aktif, semua pembelian show langsung menampilkan QRIS statis + tombol Hubungi Admin (tanpa membuat QRIS dinamis DOKU).</p>
                   </div>
                   <Switch checked={useStaticQris} onCheckedChange={setUseStaticQris} />
                 </div>

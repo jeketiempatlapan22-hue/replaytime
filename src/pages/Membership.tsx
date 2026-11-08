@@ -189,7 +189,7 @@ export default function Membership() {
         pollRef.current = setInterval(async () => {
           if (done) return;
           try {
-            const { data: st } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: r.order_id } });
+            const { data: st } = await supabase.functions.invoke('check-doku-status', { body: { order_id: r.order_id } });
             const s: any = st;
             if (s?.status === 'paid' && !done) {
               if (s.token) {

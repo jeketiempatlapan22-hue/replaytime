@@ -662,6 +662,42 @@ export type Database = {
           },
         ]
       }
+      doku_transactions: {
+        Row: {
+          amount: number
+          checked_at: string | null
+          created_at: string
+          environment: string
+          expires_at: string | null
+          order_id: string
+          qr_content: string | null
+          reference_no: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          checked_at?: string | null
+          created_at?: string
+          environment?: string
+          expires_at?: string | null
+          order_id: string
+          qr_content?: string | null
+          reference_no?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          checked_at?: string | null
+          created_at?: string
+          environment?: string
+          expires_at?: string | null
+          order_id?: string
+          qr_content?: string | null
+          reference_no?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       free_sessions: {
         Row: {
           created_at: string

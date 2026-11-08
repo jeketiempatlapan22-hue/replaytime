@@ -78,6 +78,13 @@
       "when": 1793972252593,
       "tag": "0010_chat_senders_moderators_bulk_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794175096102,
+      "tag": "0011_doku_qris_transactions",
+      "breakpoints": true
     }
   ]
 }
