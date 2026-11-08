@@ -1,5 +1,5 @@
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
-// Webhook Telegram: bot @Real48time_bot — info show, pembelian QRIS DOKU,
+// Webhook Telegram: bot @Real48time_bot — info show, pembelian QRIS Pakasir,
 // dan pengiriman link token otomatis (sama seperti bot WhatsApp).
 //
 // Perintah:
@@ -170,7 +170,7 @@ async function createOrderAndSendQr(
     const p = Number((rp as any)?.price_idr || 0);
     if (p >= 100) body.amount = p;
   } else body.show_id = id;
-  const { ok, data } = await callFn('create-doku-order', body);
+  const { ok, data } = await callFn('create-pakasir-order', body);
   if (!ok || !data?.qr_string) {
     const detail = String(data?.message || data?.error || 'gagal membuat order');
     await sendTelegram(chatId, `❌ Gagal membuat pembayaran.\n\n_${detail}_\n\nCoba lagi beberapa saat, atau beli lewat website: ${SITE}`);
@@ -242,8 +242,8 @@ async function qrisPng(payload: string): Promise<Uint8Array> {
 
 
 /**
- * Pantau order otomatis: cek status DOKU tiap 10 detik selama 5 menit.
- * Begitu terkonfirmasi, token langsung dikirim (oleh check-doku-status),
+ * Pantau order otomatis: cek status Pakasir tiap 10 detik selama 5 menit.
+ * Begitu terkonfirmasi, token langsung dikirim (oleh check-pakasir-status),
  * QRIS dihapus, dan user diberi tahu — tanpa menunggu cron polling.
  */
 function watchOrder(admin: Admin, chatId: number, messageId: number, orderUuid: string) {
@@ -258,11 +258,11 @@ function watchOrder(admin: Admin, chatId: number, messageId: number, orderUuid: 
         const paidInDb = String((row as any)?.status || '') === 'paid';
         let paid = paidInDb;
         if (!paid) {
-          const { data } = await callFn('check-doku-status', { order_id: orderUuid });
+          const { data } = await callFn('check-pakasir-status', { order_id: orderUuid });
           paid = String(data?.status || '') === 'paid';
         } else if (!(row as any)?.token_sent_at) {
           // Sudah paid tapi token belum terkirim → paksa pengiriman sekarang.
-          await callFn('check-doku-status', { order_id: orderUuid });
+          await callFn('check-pakasir-status', { order_id: orderUuid });
         }
         if (paid) {
           notified = true;
@@ -291,7 +291,7 @@ function watchOrder(admin: Admin, chatId: number, messageId: number, orderUuid: 
 
 
 async function checkOrder(admin: Admin, chatId: number, orderUuid: string) {
-  const { data } = await callFn('check-doku-status', { order_id: orderUuid });
+  const { data } = await callFn('check-pakasir-status', { order_id: orderUuid });
   const status = String(data?.status || '');
   if (status === 'paid') {
     await sendTelegram(chatId, '✅ *Pembayaran terkonfirmasi!*\n\nLink token sedang dikirim ke chat ini. Kalau belum muncul dalam 1 menit, ketik `/token`. 💖');

@@ -44,7 +44,7 @@ export default function BotAdmin() {
 
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const fonnteWebhook = `https://${projectId}.supabase.co/functions/v1/fonnte-webhook`;
-  const dokuWebhook = `https://${projectId}.supabase.co/functions/v1/doku-webhook`;
+  const pakasirWebhook = `https://${projectId}.supabase.co/functions/v1/pakasir-webhook`;
 
   const load = async () => {
     setLoading(true);
@@ -177,7 +177,7 @@ export default function BotAdmin() {
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         <h3 className="font-semibold">Webhook URL</h3>
         <p className="text-xs text-muted-foreground">
-          Pasang URL berikut di dashboard Fonnte (Device → Webhook URL) dan DOKU (Notification URL).
+          Pasang URL berikut di dashboard Fonnte (Device → Webhook URL) dan Pakasir (Project → Redirect/Callback URL).
         </p>
         <div className="space-y-2">
           <Label className="text-xs">Fonnte Incoming Webhook</Label>
@@ -189,10 +189,10 @@ export default function BotAdmin() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label className="text-xs">DOKU Notification (kirim notif pembayaran)</Label>
+          <Label className="text-xs">Pakasir Webhook (kirim notif pembayaran)</Label>
           <div className="flex gap-2">
-            <Input readOnly value={dokuWebhook} className="font-mono text-xs" />
-            <Button size="icon" variant="outline" onClick={() => copy(dokuWebhook)}>
+            <Input readOnly value={pakasirWebhook} className="font-mono text-xs" />
+            <Button size="icon" variant="outline" onClick={() => copy(pakasirWebhook)}>
               <Copy className="w-4 h-4" />
             </Button>
           </div>

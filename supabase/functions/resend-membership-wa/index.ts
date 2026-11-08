@@ -1,9 +1,8 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
-import { verifyDokuPaidStrict } from '../_shared/doku.ts';
+import { verifyPakasirPaidStrict } from '../_shared/pakasir.ts';
 // Admin-only: kirim ulang notifikasi WA membership (token + link + replay info).
 // Bisa satu order atau bulk. Untuk order yang masih 'reserved' tapi sebenarnya
-// sudah dibayar di DOKU, fungsi ini akan cek status dulu lalu finalize.
+// sudah dibayar di Pakasir, fungsi ini akan cek status dulu lalu finalize.
 //
 // Fitur:
 // - Dedup: jika token sudah ada DAN WA sudah pernah terkirim sukses untuk order
@@ -12,7 +11,10 @@ import { verifyDokuPaidStrict } from '../_shared/doku.ts';
 //   filter yang dipakai, daftar order yang dipengaruhi).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 function normalizePhone(raw: string) {
   const d = String(raw || '').replace(/\D/g, '');
@@ -66,12 +68,12 @@ function buildMessage(tpl: string, v: Record<string, string>) {
     .replace(/\{site\}/g, v.site || '');
 }
 
-async function dokuIsPaid(orderId: string, amount: number): Promise<boolean> {
-  const apiKey = 'server-managed';
-  const slug = 'doku';
+async function pakasirIsPaid(orderId: string, amount: number): Promise<boolean> {
+  const apiKey = Deno.env.get('PAKASIR_API_KEY');
+  const slug = Deno.env.get('PAKASIR_PROJECT_SLUG');
   if (!apiKey || !slug || !orderId) return false;
   try {
-    const v = await verifyDokuPaidStrict(apiKey, slug, orderId, Number(amount));
+    const v = await verifyPakasirPaidStrict(apiKey, slug, orderId, Number(amount));
     return v.paid;
   } catch { return false; }
 }
@@ -84,15 +86,15 @@ Deno.serve(async (req) => {
     if (!authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
     }
-    const url = (Deno.env.get('SUPABASE_URL') || '');
-    const anon = (Deno.env.get('SUPABASE_ANON_KEY') || '');
+    const url = Deno.env.get('SUPABASE_URL')!;
+    const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
     const userClient = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
     const { data: ud } = await userClient.auth.getUser();
     const uid = ud?.user?.id;
     const actorEmail = ud?.user?.email || '';
     if (!uid) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
 
-    const admin = createClient(url, (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''));
+    const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: isAdmin } = await admin.rpc('has_role', { _user_id: uid, _role: 'admin' });
     if (!isAdmin) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: corsHeaders });
 
@@ -127,7 +129,7 @@ Deno.serve(async (req) => {
 
         // Bila masih reserved & ada pakasir_order_id → coba cek status dulu.
         if (order.status === 'reserved' && order.kind === 'qris' && order.pakasir_order_id) {
-          const paid = await dokuIsPaid(order.pakasir_order_id, Number(order.amount || 0));
+          const paid = await pakasirIsPaid(order.pakasir_order_id, Number(order.amount || 0));
           if (!paid) { results.push({ id: oid, skipped: 'not_paid_yet' }); continue; }
         } else if (order.status !== 'paid' && order.status !== 'reserved') {
           results.push({ id: oid, skipped: `status_${order.status}` }); continue;

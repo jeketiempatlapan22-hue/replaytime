@@ -11,7 +11,8 @@
 ## DOKU menggantikan Pakasir
 - [x] Verifikasi API QRIS DOKU dan persyaratan akun.
 - [x] Ganti pembuatan QRIS, pemeriksaan pembayaran, webhook, dan polling untuk semua produk.
-- [x] Ganti pengaturan pembayaran dan tampilan pengguna ke DOKU tanpa fallback Pakasir.
+- [x] Pakasir dipulihkan dan tetap aktif sampai DOKU siap (permintaan user).
+- [ ] Alihkan pembayaran ke DOKU — setelah DOKU aktif & teruji.
 - [x] Deploy fungsi DOKU dan uji aturan verifikasi pembayaran.
 - [ ] Hubungkan kredensial DOKU dan uji pembayaran nyata — menunggu aktivasi QRIS SNAP dan data merchant DOKU.
 - [ ] Verifikasi notifikasi QRIS merchant secara langsung — menunggu panduan/konfigurasi notifikasi DOKU untuk akun ini.

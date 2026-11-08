@@ -435,7 +435,7 @@ function BillingPanel({ session }: { session: Session }) {
               {Number(bill.amount) !== Number(bill.computed_amount) && (
                 <p className="text-[11px] text-amber-600">⚠️ Jumlah diatur ulang oleh admin (otomatis: {fmtRp(bill.computed_amount)}).</p>
               )}
-              {bill.pakasir_qr_url && !bill.pakasir_qr_url.includes('pakasir.com') && (
+              {bill.pakasir_qr_url && (
                 <Button asChild className="w-full" variant="default">
                   <a href={bill.pakasir_qr_url} target="_blank" rel="noopener noreferrer">
                     <QrCode className="w-4 h-4 mr-1" />Buka QRIS untuk bayar

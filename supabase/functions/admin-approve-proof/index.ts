@@ -1,10 +1,12 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 // Admin approves a manual payment proof: force-mark the linked order as paid,
-// then delegate to `check-doku-status` to finalize (issue token) and send WA.
+// then delegate to `check-pakasir-status` to finalize (issue token) and send WA.
 // Works for both membership_orders (proof.order_id) and show/replay orders (proof.show_order_id).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -15,9 +17,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
     }
 
-    const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') || '');
-    const SERVICE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
-    const ANON_KEY = (Deno.env.get('SUPABASE_ANON_KEY') || '');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
     // Verify caller is admin using their JWT.
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -140,10 +142,10 @@ Deno.serve(async (req) => {
     }
 
 
-    // Delegate finalize + WA send to check-doku-status (uses service role internally).
+    // Delegate finalize + WA send to check-pakasir-status (uses service role internally).
     let finalize: unknown = null;
     try {
-      const fnRes = await fetch(`${SUPABASE_URL}/functions/v1/check-doku-status`, {
+      const fnRes = await fetch(`${SUPABASE_URL}/functions/v1/check-pakasir-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

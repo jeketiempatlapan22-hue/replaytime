@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { copyToClipboard } from '@/lib/clipboard';
 import { Copy, CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw, AlertTriangle, Save, RotateCcw } from 'lucide-react';
 
 const DEFAULT_WA_TPL =
@@ -67,9 +66,9 @@ function renderPreview(tpl: string) {
 
 interface CheckRow { name: string; ok: boolean; detail: string }
 
-export default function DOKUAdmin() {
+export default function PakasirAdmin() {
   const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
-  const webhookUrl = `${supabaseUrl}/functions/v1/doku-webhook`;
+  const webhookUrl = `${supabaseUrl}/functions/v1/pakasir-webhook`;
 
   const [running, setRunning] = useState(false);
   const [checks, setChecks] = useState<CheckRow[]>([]);
@@ -93,8 +92,8 @@ export default function DOKUAdmin() {
       const { data: s } = await supabase
         .from('site_settings')
         .select('key,value')
-        .in('key', ['doku_webhook_verified_at', 'wa_message_template', 'wa_show_template', 'wa_membership_template']);
-      const verified = s?.find(r => r.key === 'doku_webhook_verified_at')?.value || '';
+        .in('key', ['pakasir_webhook_verified_at', 'wa_message_template', 'wa_show_template', 'wa_membership_template']);
+      const verified = s?.find(r => r.key === 'pakasir_webhook_verified_at')?.value || '';
       setVerifiedAt(verified);
       const t = s?.find(r => r.key === 'wa_message_template')?.value;
       if (t) { setTpl(t); setTplLoaded(t); }
@@ -127,12 +126,12 @@ export default function DOKUAdmin() {
     setChecks([]);
     setAllOk(null);
     try {
-      const { data, error } = await supabase.functions.invoke('doku-selftest', { body: {} });
+      const { data, error } = await supabase.functions.invoke('pakasir-webhook-selftest', { body: {} });
       if (error) throw error;
       const r = data as { ok: boolean; checks: CheckRow[] };
       setChecks(r.checks || []);
       setAllOk(!!r.ok);
-      if (r.ok) toast.success('Koneksi DOKU berhasil');
+      if (r.ok) toast.success('Webhook lulus self-test');
       else toast.error('Ada cek yang gagal — periksa detail');
       void loadStatus();
     } catch (e: any) {
@@ -159,7 +158,7 @@ export default function DOKUAdmin() {
   };
 
   const copy = async (text: string) => {
-    if (await copyToClipboard(text)) toast.success('Disalin'); else toast.error('Salin URL secara manual dari kolom.');
+    try { await navigator.clipboard.writeText(text); toast.success('Disalin'); } catch { /* ignore */ }
   };
 
   const saveTpl = async () => {
@@ -227,7 +226,7 @@ export default function DOKUAdmin() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-            Webhook URL DOKU
+            Webhook URL Pakasir
             {verifiedAt ? (
               <span className="inline-flex items-center gap-1 text-xs font-normal text-green-600 dark:text-green-400">
                 <CheckCircle2 className="w-3.5 h-3.5" /> tervalidasi {new Date(verifiedAt).toLocaleString('id-ID')}
@@ -241,7 +240,7 @@ export default function DOKUAdmin() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Salin URL ini ke kolom <em>Webhook URL</em> di dashboard DOKU</Label>
+            <Label className="text-xs">Salin URL ini ke kolom <em>Webhook URL</em> di dashboard Pakasir</Label>
             <div className="flex gap-2">
               <Input readOnly value={webhookUrl} className="font-mono text-xs" />
               <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)} title="Salin">
@@ -251,10 +250,10 @@ export default function DOKUAdmin() {
           </div>
 
           <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-1 pl-1">
-            <li>Buka dashboard DOKU → pengaturan integrasi QRIS SNAP.</li>
+            <li>Buka dashboard Pakasir → menu <b>Project</b> / <b>Webhook</b>.</li>
             <li>Tempel URL di atas pada kolom <b>Webhook URL</b> (HTTP POST, JSON).</li>
-            <li>Pastikan <b>Client ID</b>, <b>Secret Key</b>, dan kunci RSA terdaftar telah disimpan aman.</li>
-            <li>Klik <b>Jalankan Self-Test</b> di bawah untuk memeriksa koneksi DOKU (bukan uji pembayaran).</li>
+            <li>Pastikan <b>Project Slug</b> & <b>API Key</b> di Pakasir sama dengan secrets server.</li>
+            <li>Klik <b>Jalankan Self-Test</b> di bawah untuk memastikan webhook sah & aktif.</li>
           </ol>
 
           <div className="flex flex-wrap gap-2">
@@ -263,8 +262,8 @@ export default function DOKUAdmin() {
               Jalankan Self-Test
             </Button>
             <Button variant="outline" asChild>
-              <a href="https://dashboard.doku.com" target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-4 h-4 mr-2" /> Buka Dashboard DOKU
+              <a href="https://app.pakasir.com" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4 mr-2" /> Buka Dashboard Pakasir
               </a>
             </Button>
           </div>
@@ -323,7 +322,7 @@ export default function DOKUAdmin() {
 
           <p className="text-[11px] text-muted-foreground">
             Selain webhook, sistem juga punya cron 1 menit (<code>poll-pending-orders</code>) sebagai jaring pengaman.
-            Klien juga melakukan polling ke <code>check-doku-status</code> selama dialog QR terbuka. Idempotensi
+            Klien juga melakukan polling ke <code>check-pakasir-status</code> selama dialog QR terbuka. Idempotensi
             dijamin: token & link hanya dikirim sekali per order.
           </p>
         </CardContent>
@@ -348,7 +347,7 @@ export default function DOKUAdmin() {
               ['{live_link_block}', 'Blok link Live (📺)'],
               ['{password}', 'Sandi dari kartu show'],
               ['{password_line}', 'Baris sandi (🔐)'],
-              ['{order_id}', 'Order ID DOKU'],
+              ['{order_id}', 'Order ID Pakasir'],
               ['{site}', 'realtime48show.my.id'],
             ].map(([k, d]) => (
               <code key={k} className="bg-muted/40 rounded px-1.5 py-1 text-foreground" title={d}>
@@ -395,7 +394,7 @@ export default function DOKUAdmin() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Template ini dipakai saat <b>token Live Show</b> dikirim (lewat QRIS DOKU maupun pembelian koin).
+            Template ini dipakai saat <b>token Live Show</b> dikirim (lewat QRIS Pakasir maupun pembelian koin).
             Placeholder yang tersedia:
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px]">

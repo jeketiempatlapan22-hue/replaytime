@@ -250,7 +250,7 @@ export default function MembershipPackagesAdmin() {
             <Input type="number" min={0} value={form.price_idr} onChange={(e) => setForm({ ...form, price_idr: Number(e.target.value) || 0 })} placeholder="99000" />
           </div>
           <div>
-            <Label className="text-xs">Nominal QRIS (kosongkan = pakai harga IDR)</Label>
+            <Label className="text-xs">Pakasir Amount (kosongkan = pakai harga IDR)</Label>
             <Input type="number" min={0} value={form.pakasir_amount} onChange={(e) => setForm({ ...form, pakasir_amount: Number(e.target.value) || 0 })} />
           </div>
           <div>

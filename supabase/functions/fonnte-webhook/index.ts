@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
         }).join('\n\n');
       }
     } else if (cmd === '/cek') {
-      // Recheck the user's most recent pending order via DOKU poller.
+      // Recheck the user's most recent pending order via Pakasir poller.
       const { data: lastOrder } = await admin
         .from('orders')
         .select('id,user_id,status,kind,token_sent_at,access_token,replay_id,show_id,item_title,pakasir_order_id,amount')
@@ -543,14 +543,14 @@ Deno.serve(async (req) => {
         reply = `✅ Top-up koin Anda sudah lunas dan diproses.\nSaldo saat ini: *${(bal as any)?.balance ?? '-'}* koin.`;
       } else if (lastOrder.status === 'paid' && lastOrder.access_token) {
         if (lastOrder.pakasir_order_id && Number((lastOrder as any).amount || 0) > 0) {
-          const verifyRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/check-doku-status`, {
+          const verifyRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/check-pakasir-status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
             body: JSON.stringify({ order_id: lastOrder.id }),
           });
           const verifyJson: any = await verifyRes.json().catch(() => ({}));
           if (verifyJson?.status !== 'paid') {
-            reply = `⏳ Pembayaran *${lastOrder.pakasir_order_id}* belum terverifikasi DOKU. Coba */cek* lagi setelah pembayaran berhasil.`;
+            reply = `⏳ Pembayaran *${lastOrder.pakasir_order_id}* belum terverifikasi Pakasir. Coba */cek* lagi setelah pembayaran berhasil.`;
           } else {
             const origin = (map.get('site_origin') || 'https://realtime48show.my.id').replace(/\/+$/, '');
             const link = lastOrder.show_id && !lastOrder.replay_id
@@ -567,7 +567,7 @@ Deno.serve(async (req) => {
         }
       } else {
         try {
-          const pollRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/check-doku-status`, {
+          const pollRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/check-pakasir-status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
             body: JSON.stringify({ order_id: lastOrder.id }),
