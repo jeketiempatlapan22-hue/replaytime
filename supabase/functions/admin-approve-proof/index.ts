@@ -2,11 +2,9 @@
 // then delegate to `check-pakasir-status` to finalize (issue token) and send WA.
 // Works for both membership_orders (proof.order_id) and show/replay orders (proof.show_order_id).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { z } from 'npm:zod@3';
+import { reviewTransition } from '../_shared/approval-gate.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -17,9 +15,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
     }
 
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 
     // Verify caller is admin using their JWT.
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -37,11 +35,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: corsHeaders });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const proofId = String((body as any).proof_id || '');
-    if (!proofId) {
-      return new Response(JSON.stringify({ error: 'missing proof_id' }), { status: 400, headers: corsHeaders });
-    }
+    const parsed = z.object({
+      proof_id: z.string().uuid(), action: z.enum(['approve', 'reject', 'reset']).default('approve'),
+      kind: z.enum(['membership', 'show', 'replay']).optional(), target_id: z.string().uuid().optional(),
+      phone: z.string().max(30).optional(), email: z.string().max(254).optional(),
+    }).safeParse(await req.json().catch(() => ({})));
+    if (!parsed.success) return new Response(JSON.stringify({ error: 'invalid_request' }), { status: 400, headers: corsHeaders });
+    const body = parsed.data;
+    const proofId = body.proof_id;
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -51,18 +52,25 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'proof_not_found' }), { status: 404, headers: corsHeaders });
     }
 
-    // Tolak / Reset (hanya untuk order show/replay/bundle).
-    const action = String((body as any).action || 'approve');
+    const action = body.action;
     if (action === 'reject' || action === 'reset') {
-      if (!proof.show_order_id) {
-        return new Response(JSON.stringify({ error: 'only_show_orders' }), { status: 400, headers: corsHeaders });
+      const table = proof.order_id ? 'membership_orders' : 'orders';
+      const linkedId = proof.order_id || proof.show_order_id;
+      let status: string | undefined;
+      if (linkedId) {
+        const { data: order, error } = await admin.from(table).select('id,status').eq('id', linkedId).maybeSingle();
+        if (error || !order) return new Response(JSON.stringify({ error: 'order_not_found' }), { status: 404, headers: corsHeaders });
+        status = order.status;
       }
-      const { data: so } = await admin.from('orders').select('id,status').eq('id', proof.show_order_id).maybeSingle();
-      if (!so) return new Response(JSON.stringify({ error: 'show_order_not_found' }), { status: 404, headers: corsHeaders });
-      if (so.status === 'paid') return new Response(JSON.stringify({ error: 'already_approved' }), { status: 409, headers: corsHeaders });
-      await admin.from('orders').update({ status: action === 'reject' ? 'rejected' : 'awaiting_approval' }).eq('id', so.id);
-      await admin.from('membership_payment_proofs').update({ handled: action === 'reject' }).eq('id', proof.id);
-      return new Response(JSON.stringify({ ok: true, status: action === 'reject' ? 'rejected' : 'awaiting_approval' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (status === 'paid' || proof.review_status === 'approved') return new Response(JSON.stringify({ error: 'already_approved' }), { status: 409, headers: corsHeaders });
+      const next = reviewTransition(action, status);
+      if (linkedId) {
+        const { error } = await admin.from(table).update({ status: next.status }).eq('id', linkedId);
+        if (error) throw error;
+      }
+      const { error } = await admin.from('membership_payment_proofs').update({ handled: next.handled, review_status: next.review_status }).eq('id', proof.id);
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true, status: next.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     let orderKind: 'membership' | 'show' | null = null;
@@ -173,8 +181,8 @@ Deno.serve(async (req) => {
       finalize = { error: String(e) };
     }
 
-    // Mark proof handled regardless — admin explicitly approved it.
-    await admin.from('membership_payment_proofs').update({ handled: true }).eq('id', proof.id);
+    // Record the admin decision separately from image/handled state.
+    await admin.from('membership_payment_proofs').update({ handled: true, review_status: 'approved' }).eq('id', proof.id);
 
     return new Response(JSON.stringify({
       ok: true,

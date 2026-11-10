@@ -1,5 +1,11 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
+## Persetujuan membership dan bukti manual
+- [x] Tahan membership terkonfirmasi sampai disetujui admin; pertahankan akses WhatsApp.
+- [x] Setujui, tolak, dan reset bukti manual, termasuk bukti tanpa pesanan terhubung.
+- [x] Uji aturan, deploy enam fungsi, dan periksa halaman membership desktop/ponsel tanpa error.
+- [ ] Uji pembayaran nyata dan keputusan admin dari halaman — akun peminta belum tersedia untuk sesi pengujian.
+
 ## Retensi token dan identitas chat
 - [x] Simpan token hingga tujuh hari setelah kedaluwarsa tanpa memperpanjang akses; sembilan tes lulus.
 - [x] Pulihkan 28 catatan token dua hari terakhir ke riwayat Token Factory tanpa mengaktifkan akses ulang.

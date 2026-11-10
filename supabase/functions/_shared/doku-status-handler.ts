@@ -1,4 +1,4 @@
-import { holdForApproval } from './approval-gate.ts';
+import { holdForApproval, holdMembershipForApproval } from './approval-gate.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { primeReplayHost, rewriteReplay } from './replay-origin.ts';
 // Polls DOKU for a given order's payment status. If paid, marks the order
@@ -182,6 +182,9 @@ Deno.serve(async (req) => {
     const { data: mOrder } = await admin
       .from('membership_orders').select('*').eq('id', orderUuid).maybeSingle();
     if (mOrder) {
+      if (['awaiting_approval', 'rejected'].includes(mOrder.status)) {
+        return new Response(JSON.stringify({ ok: true, status: mOrder.status, membership: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       // Already finalized + WA sent → return as-is
       if (mOrder.status === 'paid' && mOrder.membership_token_id && mOrder.wa_sent_at) {
         return new Response(JSON.stringify({ ok: true, status: 'paid', already: true, membership: true, ...(await memCreds(admin, mOrder.id)) }), {
@@ -202,6 +205,10 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
+      }
+
+      if (await holdMembershipForApproval(admin, mOrder, 'DOKU')) {
+        return new Response(JSON.stringify({ ok: true, status: mOrder.status, membership: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
       // Finalize (issue token) if not yet

@@ -1411,6 +1411,7 @@ export type Database = {
           order_id: string | null
           package_name: string
           phone: string
+          review_status: string
           show_order_id: string | null
           user_id: string | null
         }
@@ -1426,6 +1427,7 @@ export type Database = {
           order_id?: string | null
           package_name?: string
           phone?: string
+          review_status?: string
           show_order_id?: string | null
           user_id?: string | null
         }
@@ -1441,6 +1443,7 @@ export type Database = {
           order_id?: string | null
           package_name?: string
           phone?: string
+          review_status?: string
           show_order_id?: string | null
           user_id?: string | null
         }
@@ -2925,6 +2928,7 @@ export type Database = {
           order_id: string | null
           package_name: string
           phone: string
+          review_status: string
           show_order_id: string | null
           user_id: string | null
         }[]

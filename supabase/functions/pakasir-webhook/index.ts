@@ -1,4 +1,4 @@
-import { holdForApproval } from '../_shared/approval-gate.ts';
+import { holdForApproval, holdMembershipForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Pakasir webhook: konfirmasi pembayaran QRIS dinamis, lalu kirim token via Fonnte.
@@ -185,6 +185,9 @@ Deno.serve(async (req) => {
     }
     if (mOrder.status === 'paid' && mOrder.membership_token_id) {
       return new Response(JSON.stringify({ ok: true, already: true }), { headers: corsHeaders });
+    }
+    if (await holdMembershipForApproval(admin, mOrder, 'Pakasir')) {
+      return new Response(JSON.stringify({ ok: true, status: mOrder.status, membership: true }), { headers: corsHeaders });
     }
     // Finalize → issue membership token
     const { data: fin, error: ferr } = await admin.rpc('finalize_membership_order', { _order_id: mOrder.id });

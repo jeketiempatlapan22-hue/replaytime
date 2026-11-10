@@ -39,3 +39,35 @@ export async function holdForApproval(admin: any, order: any, source = 'gateway'
   }
   return true;
 }
+
+/** Membership orders live separately; never issue credentials while awaiting review. */
+export async function holdMembershipForApproval(admin: any, order: any, source = 'gateway'): Promise<boolean> {
+  if (!order || order.status === 'paid') return false;
+  if (order.status === 'awaiting_approval' || order.status === 'rejected') return true;
+  if (!(await approvalModeOn(admin))) return false;
+  const { error } = await admin.from('membership_orders').update({
+    status: 'awaiting_approval', paid_at: new Date().toISOString(),
+  }).eq('id', order.id);
+  if (error) throw error;
+  order.status = 'awaiting_approval';
+  const { data: existing, error: readError } = await admin.from('membership_payment_proofs').select('id').eq('order_id', order.id).maybeSingle();
+  if (readError) throw readError;
+  if (!existing) {
+    const { data: pkg } = await admin.from('membership_packages').select('name').eq('id', order.package_id).maybeSingle();
+    const { error: proofError } = await admin.from('membership_payment_proofs').insert({
+      order_id: order.id, user_id: order.user_id || null, phone: order.phone || '',
+      email: order.email || '', package_name: pkg?.name || 'Membership',
+      amount: Number(order.amount || 0), image_path: '', handled: false,
+      note: `✅ Lunas di ${source} — menunggu persetujuan admin`,
+      expires_at: new Date(Date.now() + 14 * 86400_000).toISOString(),
+    });
+    if (proofError) throw proofError;
+  }
+  return true;
+}
+
+export function reviewTransition(action: 'reject' | 'reset', orderStatus?: string) {
+  if (orderStatus === 'paid') throw new Error('already_approved');
+  return { status: action === 'reject' ? 'rejected' : 'awaiting_approval',
+    review_status: action === 'reject' ? 'rejected' : 'pending', handled: action === 'reject' };
+}

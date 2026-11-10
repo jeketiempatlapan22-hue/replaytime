@@ -1,4 +1,4 @@
-import { holdForApproval } from '../_shared/approval-gate.ts';
+import { holdForApproval, holdMembershipForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Background poller: scans pending orders, queries Pakasir, marks paid + delivers WA.
@@ -475,7 +475,8 @@ Deno.serve(async (req) => {
         }
 
         const verified = await verifyPakasirPaid(apiKey, slug, mo.pakasir_order_id, Number(mo.amount || 0));
-        if (!verified.paid) { memResults.push({ id: mo.id, status: verified.status || 'pending' }); continue; }
+        if (mo.status !== 'paid' && !verified.paid) { memResults.push({ id: mo.id, status: verified.status || 'pending' }); continue; }
+        if (await holdMembershipForApproval(admin, mo, 'Pakasir')) { memResults.push({ id: mo.id, status: mo.status }); continue; }
 
         let tok: any = null;
         if (!mo.membership_token_id) {

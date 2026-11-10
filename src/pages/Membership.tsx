@@ -16,6 +16,8 @@ import { useActiveMembership } from '@/hooks/useActiveMembership';
 import MembershipDashboard from '@/components/MembershipDashboard';
 import AccessInfoCard from '@/components/AccessInfoCard';
 import MembershipProofUpload from '@/components/MembershipProofUpload';
+import PendingApprovalNotice from '@/components/PendingApprovalNotice';
+import type { ApprovalState } from '@/lib/purchaseSync';
 
 interface Pkg {
   id: string;
@@ -75,6 +77,8 @@ export default function Membership() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderAmount, setOrderAmount] = useState(0);
   const [paid, setPaid] = useState(false);
+  const [approvalState, setApprovalState] = useState<ApprovalState | null>(null);
+  const [adminWa, setAdminWa] = useState('');
 
   const [successOpen, setSuccessOpen] = useState(false);
   const [successLink, setSuccessLink] = useState('');
@@ -82,6 +86,39 @@ export default function Membership() {
   const [successPassword, setSuccessPassword] = useState('');
 
   const pollRef = useRef<any>(null);
+
+  useEffect(() => {
+    void supabase.from('site_settings').select('value').eq('key', 'owner_wa_number').maybeSingle().then(({ data }) => setAdminWa(data?.value || ''));
+    try {
+      const saved = JSON.parse(localStorage.getItem('replaytime-membership-order') || 'null');
+      if (saved?.id) { setOrderId(saved.id); setOrderAmount(saved.amount || 0); setPicked(saved.pkg); }
+    } catch { /* no pending order */ }
+  }, []);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let running = false;
+    const check = async () => {
+      if (running) return;
+      running = true;
+      try {
+        const { data: s } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: orderId } });
+        if (s?.status === 'awaiting_approval' || s?.status === 'rejected') setApprovalState(s.status);
+        if (s?.status === 'paid' && s.token) {
+          saveMembershipCredentials(s.token, s.password || '');
+          setSuccessToken(s.token); setSuccessPassword(s.password || '');
+          setSuccessLink(new URL(s.link || '/live', window.location.origin).href);
+          setPaid(true); setApprovalState(null); refreshMembership();
+          localStorage.removeItem('replaytime-membership-order');
+        }
+      } catch { /* retry on the next poll */ } finally { running = false; }
+    };
+    void check();
+    const timer = setInterval(() => void check(), 3000);
+    return () => clearInterval(timer);
+    // Keep polling stable when membership refresh updates the dashboard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   // Fetch packages + balance + realtime
   useEffect(() => {
@@ -180,32 +217,14 @@ export default function Membership() {
         if (!r?.ok) throw new Error(r?.error || 'gagal');
         setPickOpen(false);
         setOrderId(r.order_id);
+        setApprovalState(null);
+        localStorage.setItem('replaytime-membership-order', JSON.stringify({ id: r.order_id, amount: r.amount, pkg: picked }));
         setOrderAmount(r.amount);
         const url = await QRCode.toDataURL(r.qr_string, { width: 512, margin: 1 });
         setQrDataUrl(url);
         setPaid(false);
         setPayOpen(true);
-        pollRef.current && clearInterval(pollRef.current);
-        let done = false;
-        pollRef.current = setInterval(async () => {
-          if (done) return;
-          try {
-            const { data: st } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: r.order_id } });
-            const s: any = st;
-            if (s?.status === 'paid' && !done) {
-              if (s.token) {
-                saveMembershipCredentials(s.token, s.password || '');
-                setSuccessToken(s.token); setSuccessPassword(s.password || '');
-                setSuccessLink(`${window.location.origin}${s.link || ''}`);
-              }
-              done = true;
-              setPaid(true);
-              clearInterval(pollRef.current);
-              refreshMembership();
-              toast.success('Pembayaran berhasil! Membership aktif.');
-            }
-          } catch { /* ignore, coba lagi */ }
-        }, 3000);
+
       }
     } catch (err: any) {
       const msg = err?.message || String(err);
@@ -230,6 +249,8 @@ export default function Membership() {
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
+        {approvalState && <PendingApprovalNotice state={approvalState} adminWa={adminWa} itemTitle={picked?.name || 'Membership'} orderId={orderId || undefined} phone={phone} />}
+        {approvalState && <Button variant="outline" onClick={() => setProofOpen(true)}><Upload className="w-4 h-4 mr-2" />Upload Bukti (Opsional)</Button>}
         {activeMembership && !showShop ? (
           <MembershipDashboard membership={activeMembership} onShopMore={() => setShowShop(true)} />
         ) : (
@@ -400,7 +421,7 @@ export default function Membership() {
             <DialogTitle>Bayar Membership</DialogTitle>
             <DialogDescription className="text-xs">{picked?.name}</DialogDescription>
           </DialogHeader>
-          {!paid && qrDataUrl && (
+          {!paid && !approvalState && qrDataUrl && (
             <div className="text-center space-y-3">
               <div className="bg-white inline-block p-3 rounded">
                 <img src={qrDataUrl} width={240} height={240} alt="QRIS" />
@@ -416,6 +437,10 @@ export default function Membership() {
               </div>
             </div>
           )}
+          {approvalState && <>
+            <PendingApprovalNotice state={approvalState} adminWa={adminWa} itemTitle={picked?.name || 'Membership'} orderId={orderId || undefined} phone={phone} />
+            <Button variant="outline" onClick={() => setProofOpen(true)}><Upload className="w-4 h-4 mr-2" />Upload Bukti (Opsional)</Button>
+          </>}
           {paid && (
             <div className="text-center space-y-3 py-4">
               <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />

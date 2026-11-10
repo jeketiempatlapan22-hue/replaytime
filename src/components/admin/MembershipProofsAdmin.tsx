@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 type Proof = {
   id: string; order_id: string | null; show_order_id: string | null; user_id: string | null;
   email: string; phone: string; package_name: string; amount: number;
-  image_path: string; note: string; handled: boolean;
+  image_path: string; note: string; handled: boolean; review_status?: 'pending' | 'approved' | 'rejected';
   created_at: string; expires_at: string;
 };
 
@@ -43,12 +43,20 @@ export default function MembershipProofsAdmin() {
     toast({ title: on ? 'Mode Persetujuan Admin aktif' : 'Mode Persetujuan Admin nonaktif' });
   };
   const loadOrders = async (list: Proof[]) => {
-    const ids = list.map((r) => r.show_order_id).filter(Boolean) as string[];
-    if (!ids.length) return;
-    const { data } = await supabase.from('orders').select('id,status,access_token,show_id,replay_id,kind,item_title,user_phone').in('id', ids);
+    const ids = list.flatMap((r) => r.show_order_id ? [r.show_order_id] : []);
+    const memIds = list.flatMap((r) => r.order_id ? [r.order_id] : []);
+    const [shows, memberships] = await Promise.all([
+      ids.length ? supabase.from('orders').select('id,status,access_token,show_id,replay_id,kind,item_title,user_phone').in('id', ids) : Promise.resolve({ data: [] }),
+      memIds.length ? supabase.from('membership_orders').select('id,status,phone').in('id', memIds) : Promise.resolve({ data: [] }),
+    ]);
     const m: typeof orderInfo = {};
-    for (const o of (data || []) as any[]) m[o.id] = o;
+    for (const o of shows.data || []) m[o.id] = o;
+    for (const o of memberships.data || []) m[o.id] = { status: o.status, access_token: null, show_id: null, replay_id: null, kind: 'membership', item_title: '', user_phone: o.phone };
     setOrderInfo(m);
+  };
+  const reviewStatus = (r: Proof) => {
+    const id = r.order_id || r.show_order_id;
+    return (id ? orderInfo[id]?.status : undefined) || (r.review_status === 'approved' ? 'paid' : r.review_status === 'rejected' ? 'rejected' : 'awaiting_approval');
   };
   const orderAction = async (r: Proof, action: 'reject' | 'reset') => {
     if (action === 'reject' && !confirm('Tolak pesanan ini?')) return;
@@ -57,8 +65,9 @@ export default function MembershipProofsAdmin() {
     setApproving((s) => ({ ...s, [r.id]: false }));
     const res = data as any;
     if (error || !res?.ok) return toast({ title: 'Gagal', description: error?.message || res?.error, variant: 'destructive' });
-    setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: action === 'reject' } : y)));
-    if (r.show_order_id) setOrderInfo((m) => ({ ...m, [r.show_order_id!]: { ...m[r.show_order_id!], status: res.status } }));
+    setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: action === 'reject', review_status: action === 'reject' ? 'rejected' : 'pending' } : y)));
+    const id = r.order_id || r.show_order_id;
+    if (id) setOrderInfo((m) => ({ ...m, [id]: { ...m[id], status: res.status } }));
     toast({ title: action === 'reject' ? 'Pesanan ditolak' : 'Status dikembalikan ke Pending' });
   };
   const copyTokenMessage = async (r: Proof) => {
@@ -76,7 +85,7 @@ export default function MembershipProofsAdmin() {
     let pw = '';
     if (o.replay_id) {
       const { data: rp } = await (supabase as any).rpc('admin_get_replays');
-      pw = ((rp || []) as any[]).find((x) => x.id === o!.replay_id)?.password || '';
+      pw = ((rp || []) as any[]).find((x) => x.id === o?.replay_id)?.password || '';
     }
     const msg = `📱 *Nomor Pembeli:* ${o.user_phone || r.phone || '-'}\n\n🎤 *${o.item_title || r.package_name}*\n\n🔗 *Link Akses:*\n${link}\n\n🎬 *Link Replay:* ${origin}${pw ? `\n🔐 Sandi Replay: *${pw}*` : ''}\n\n👤 Hanya untuk 1 perangkat pertama.\n\n— *ReplayTime* 💖`;
     void copyText(msg, 'Link token + info replay');
@@ -179,12 +188,13 @@ export default function MembershipProofsAdmin() {
     });
     setApproving((s) => ({ ...s, [r.id]: false }));
     if (error) return toast({ title: 'Gagal setujui', description: error.message, variant: 'destructive' });
-    const res = data as { ok?: boolean; order_kind?: string; finalize?: { sent?: boolean; status?: string; error?: string } };
+    const res = data as { error?: string; ok?: boolean; order_kind?: string; finalize?: { sent?: boolean; status?: string; error?: string } };
+    if (!res?.ok) return toast({ title: 'Gagal setujui', description: res?.error || 'Pesanan belum disetujui', variant: 'destructive' });
     const sent = res?.finalize?.sent;
     const tokenVal = (res?.finalize as any)?.access_token || (res?.finalize as any)?.token || '';
     if (tokenVal) setResults((x) => ({ ...x, [r.id]: String(tokenVal) }));
-    setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: true } : y)));
-    if (r.show_order_id) setOrderInfo((m) => ({ ...m, [r.show_order_id!]: { ...m[r.show_order_id!], status: 'paid', access_token: tokenVal || m[r.show_order_id!]?.access_token || null } }));
+    setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: true, review_status: 'approved' } : y)));
+    await load();
     if (sent) {
       toast({ title: 'Disetujui & WA terkirim', description: `${res.order_kind === 'membership' ? 'Membership' : 'Show/Replay'} aktif — token dikirim ke ${r.phone}.` });
     } else if (res?.finalize?.error) {
@@ -214,7 +224,7 @@ export default function MembershipProofsAdmin() {
         <CardContent className="pt-4 flex items-start justify-between gap-3">
           <div>
             <div className="font-semibold text-sm flex items-center gap-2"><ShieldCheck className="w-4 h-4" />Wajib Persetujuan Admin Setelah Bayar</div>
-            <p className="text-xs text-muted-foreground">Jika aktif, pembelian show/replay/bundle yang sudah lunas di QRIS berstatus Pending sampai Anda menekan Setujui di bawah. Berlaku untuk user login, guest, dan tanpa login.</p>
+            <p className="text-xs text-muted-foreground">Jika aktif, pembelian show/replay/bundle/membership yang sudah lunas di QRIS berstatus Pending sampai Anda menekan Setujui di bawah. Berlaku untuk user login, guest, dan tanpa login.</p>
           </div>
           <Switch checked={approvalMode} onCheckedChange={toggleApprovalMode} />
         </CardContent>
@@ -255,7 +265,7 @@ export default function MembershipProofsAdmin() {
                       <img src={urls[r.id]} alt="bukti" className="w-full h-48 object-cover" loading="lazy" />
                     </a>
                   ) : (
-                    <div className="w-full h-48 bg-secondary flex items-center justify-center text-xs text-muted-foreground">Memuat gambar…</div>
+                    <div className="w-full h-48 bg-secondary flex items-center justify-center text-xs text-muted-foreground">{r.image_path ? 'Memuat gambar…' : 'Pembayaran terkonfirmasi — bukti upload tidak wajib'}</div>
                   )}
                   <div className="p-3 space-y-1.5 text-xs">
                     <div className="flex items-center gap-1 flex-wrap">
@@ -273,11 +283,9 @@ export default function MembershipProofsAdmin() {
 
                     {r.order_id && <div className="font-mono text-[10px] truncate">Order Membership: {r.order_id}</div>}
                     {r.show_order_id && <div className="font-mono text-[10px] truncate">Order Show: {r.show_order_id}</div>}
-                    {r.show_order_id && orderInfo[r.show_order_id] && (
-                      <Badge variant={orderInfo[r.show_order_id].status === 'paid' ? 'default' : orderInfo[r.show_order_id].status === 'rejected' ? 'destructive' : 'secondary'}>
-                        {orderInfo[r.show_order_id].status === 'paid' ? 'Disetujui' : orderInfo[r.show_order_id].status === 'rejected' ? 'Ditolak' : orderInfo[r.show_order_id].status === 'awaiting_approval' ? 'Lunas — Menunggu Persetujuan' : orderInfo[r.show_order_id].status}
-                      </Badge>
-                    )}
+                    <Badge variant={reviewStatus(r) === 'paid' ? 'default' : reviewStatus(r) === 'rejected' ? 'destructive' : 'secondary'}>
+                      {reviewStatus(r) === 'paid' ? 'Disetujui' : reviewStatus(r) === 'rejected' ? 'Ditolak' : 'Menunggu Persetujuan'}
+                    </Badge>
                     {r.note && <div className="text-muted-foreground italic">"{r.note}"</div>}
                     <div className="text-muted-foreground">{new Date(r.created_at).toLocaleString('id-ID')}</div>
                     {results[r.id] && (
@@ -312,9 +320,9 @@ export default function MembershipProofsAdmin() {
                       {(r.order_id || r.show_order_id || (manual[r.id]?.kind && manual[r.id]?.target)) && (
                         <Button
                           size="sm"
-                          className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white"
+                          className="h-7 text-[11px]"
                           onClick={() => approveAndSend(r)}
-                          disabled={!!approving[r.id]}
+                          disabled={!!approving[r.id] || reviewStatus(r) === 'paid' || reviewStatus(r) === 'rejected'}
                         >
                           {approving[r.id] ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
                           Setujui & Kirim Token
@@ -325,12 +333,12 @@ export default function MembershipProofsAdmin() {
                           <Button size="sm" variant="outline" className="h-7 text-[11px]"><ExternalLink className="w-3 h-3 mr-1" />Buka</Button>
                         </a>
                       )}
-                      {r.show_order_id && orderInfo[r.show_order_id]?.status !== 'paid' && orderInfo[r.show_order_id]?.status !== 'rejected' && (
+                      {reviewStatus(r) !== 'paid' && reviewStatus(r) !== 'rejected' && (
                         <Button size="sm" variant="destructive" className="h-7 text-[11px]" disabled={!!approving[r.id]} onClick={() => orderAction(r, 'reject')}>
                           <XCircle className="w-3 h-3 mr-1" />Tolak
                         </Button>
                       )}
-                      {r.show_order_id && orderInfo[r.show_order_id]?.status === 'rejected' && (
+                      {reviewStatus(r) === 'rejected' && (
                         <Button size="sm" variant="outline" className="h-7 text-[11px]" disabled={!!approving[r.id]} onClick={() => orderAction(r, 'reset')}>
                           <RotateCcw className="w-3 h-3 mr-1" />Reset
                         </Button>
