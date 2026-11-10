@@ -411,7 +411,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
                     <Input id="phone-buy" type="tel" inputMode="numeric" placeholder="0812xxxxxxxx" value={phone} onChange={(e) => { setPhone(e.target.value); setWaStatus('idle'); }} className="pl-9" />
                   </div>
                   <p className="text-xs text-muted-foreground">Token akses akan dikirim ke nomor ini setelah pembayaran lunas.</p>
-                  <WaPhoneNotice status={waStatus} adminWa={ownerWa} item={itemTitle} phone={normalizePhone(phone)} extra={`• Harga: Rp ${payAmount.toLocaleString('id-ID')}`} />
+                  <WaPhoneNotice status={waStatus} adminWa={ownerWa} item={itemTitle} phone={normalizePhone(phone)} extra={`• Harga: Rp ${payAmount.toLocaleString('id-ID')}`} approvalNote={kind === 'show' || kind === 'bundle'} />
                 </div>
                 <Button className="w-full" onClick={handleCreate} disabled={!phone || waStatus === 'checking'}>
                   Lanjut ke Pembayaran

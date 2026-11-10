@@ -12,9 +12,9 @@ function fakeAdmin(mode: string) {
 }
 
 describe('admin approval gate', () => {
-  it('gates show, replay and bundle orders but not coin top-ups', () => {
+  it('gates show and bundle orders but not replay or coin top-ups', () => {
     expect(isGatedOrder({ kind: 'show', status: 'pending' })).toBe(true);
-    expect(isGatedOrder({ kind: 'replay_only', status: 'pending' })).toBe(true);
+    expect(isGatedOrder({ kind: 'replay_only', status: 'pending' })).toBe(false);
     expect(isGatedOrder({ kind: 'bundle', status: 'pending' })).toBe(true);
     expect(isGatedOrder({ kind: 'coin_topup', status: 'pending' })).toBe(false);
   });

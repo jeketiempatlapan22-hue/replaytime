@@ -4,7 +4,7 @@ export type WaCheckStatus = 'idle' | 'checking' | 'registered' | 'not_registered
 
 /** Hanya nomor yang jelas tidak terdaftar yang diblokir; gangguan tetap boleh lanjut. */
 export const waBlocksPurchase = (s: WaCheckStatus) => s === 'not_registered' || s === 'invalid';
-export const waShowsAdminButton = (s: WaCheckStatus) => s === 'not_registered' || s === 'unknown';
+export const waShowsAdminButton = (s: WaCheckStatus) => s === 'not_registered';
 
 export async function checkWaNumber(phone: string): Promise<WaCheckStatus> {
   try {

@@ -4,7 +4,7 @@
 // Approval sets status 'paid' and delegates to check-pakasir-status to finalize.
 // deno-lint-ignore-file no-explicit-any
 
-export const GATED_KINDS = new Set(['show', 'replay', 'replay_only', 'bundle']);
+export const GATED_KINDS = new Set(['show', 'bundle']);
 
 export function isGatedOrder(order: any): boolean {
   return !!order && GATED_KINDS.has(String(order.kind || '')) && order.status !== 'paid';

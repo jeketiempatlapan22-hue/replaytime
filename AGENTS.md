@@ -29,4 +29,4 @@
 
 - Pakasir stays the live payment path until DOKU is activated and tested; DOKU code lives in separate doku-* functions and is switched in only then.
 - Use DOKU SNAP through the shared server-only adapter for all QR creation and strict status verification; retain legacy invoice columns for compatibility, query stored references (never create during verification), and reject sandbox fulfillment so old orders and test charges cannot grant new access.
-- Gate gateway-confirmed show/replay/bundle and QRIS membership orders through _shared/approval-gate.ts; track standalone manual proof review separately, and finalize only after admin approval through check-pakasir-status, so rejected/pending orders never issue credentials.
+- Gate gateway-confirmed show/bundle (replays release immediately) and QRIS membership orders through _shared/approval-gate.ts; track standalone manual proof review separately, and finalize only after admin approval through check-pakasir-status, so rejected/pending orders never issue credentials.

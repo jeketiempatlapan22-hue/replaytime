@@ -386,7 +386,7 @@ export default function Membership() {
                 <Input value={phone} onChange={(e) => { setPhone(e.target.value); setWaStatus('idle'); }} className="pl-9" placeholder="0812xxxx" />
               </div>
               <p className="text-[10px] text-muted-foreground">Link token akan dikirim ke nomor ini.</p>
-              <WaPhoneNotice status={waStatus} adminWa={adminWa} item={`Membership ${picked?.name || ''}`} phone={normalizePhone(phone)} />
+              <WaPhoneNotice status={waStatus} adminWa={adminWa} item={`Membership ${picked?.name || ''}`} phone={normalizePhone(phone)} approvalNote />
             </div>
 
             <div className="space-y-1">
