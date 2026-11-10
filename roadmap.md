@@ -1,5 +1,10 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
+## Retensi token dan identitas chat
+- [ ] Simpan token hingga tujuh hari setelah kedaluwarsa tanpa memperpanjang akses.
+- [ ] Pulihkan token dua hari terakhir dari catatan yang masih tersedia, beserta identitas yang dapat diverifikasi.
+- [ ] Perbaiki pencatatan dan tampilan identitas pengirim chat; uji dengan akun admin.
+
 ## Grup pembeli show dan membership
 - [x] Simpan grup membership dan pilihan grup reseller per token.
 - [x] Tombol gabung grup setelah pembayaran dan di informasi akses Profil.

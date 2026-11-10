@@ -50,7 +50,12 @@ function TokenTable({ kind, status }: { kind: Kind; status: Status }) {
     const { data, error } = await supabase.rpc(rpc, { _q: q, _status: status });
     setLoading(false);
     if (error) return toast({ title: 'Gagal memuat', description: error.message, variant: 'destructive' });
-    setRows(data || []);
+    if (kind === 'show' && data?.length) {
+      const { data: owners, error: ownerError } = await supabase.rpc('admin_token_factory_owners', { _ids: data.map(r => r.id) });
+      if (ownerError) toast({ title: 'Info pembeli gagal dimuat', description: ownerError.message, variant: 'destructive' });
+      const ownerRows = Array.isArray(owners) ? owners as unknown as { id: string; phone: string; email: string; username: string; created_by: string }[] : [];
+      setRows(data.map(r => ({ ...r, ...ownerRows.find(o => o.id === r.id) })));
+    } else setRows(data || []);
     setSelected(new Set());
   };
 
@@ -190,6 +195,10 @@ function TokenTable({ kind, status }: { kind: Kind; status: Status }) {
                     </div>
                   )}
                   <div>📲 Device: {r.devices_used}/{r.max_devices}</div>
+                  {kind === 'show' && r.phone && <div className="break-all">📱 {r.phone}</div>}
+                  {kind === 'show' && r.email && <div className="break-all">{r.email}</div>}
+                  {kind === 'show' && r.username && <div className="break-all">Akun: {r.username}</div>}
+                  {r.created_by && <div className="break-all">Dibuat oleh: {r.created_by}</div>}
                   <div>🕒 Dibuat: {new Date(r.created_at).toLocaleString('id-ID')}</div>
                   <div>⏳ Berakhir: {r.expires_at ? new Date(r.expires_at).toLocaleString('id-ID') : '—'}</div>
                 </div>

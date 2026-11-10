@@ -92,6 +92,20 @@
       "when": 1794277166708,
       "tag": "0012_buyer_group_links",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794292492722,
+      "tag": "0013_retain_tokens_and_atomic_chat_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794292589990,
+      "tag": "0014_recoverable_token_factory_history",
+      "breakpoints": true
     }
   ]
 }

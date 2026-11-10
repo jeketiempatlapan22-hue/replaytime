@@ -2372,6 +2372,45 @@ export type Database = {
         }
         Relationships: []
       }
+      token_factory_history: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          kind: string
+          label: string
+          original_link: string
+          phone: string
+          restored_at: string
+          title: string
+          token: string
+        }
+        Insert: {
+          created_at: string
+          expires_at?: string | null
+          id?: string
+          kind: string
+          label?: string
+          original_link?: string
+          phone?: string
+          restored_at?: string
+          title?: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          original_link?: string
+          phone?: string
+          restored_at?: string
+          title?: string
+          token?: string
+        }
+        Relationships: []
+      }
       tv_pair_codes: {
         Row: {
           browser_id: string | null
@@ -3054,6 +3093,7 @@ export type Database = {
         Args: { _include_expired?: boolean; _package_id: string }
         Returns: number
       }
+      admin_token_factory_owners: { Args: { _ids: string[] }; Returns: Json }
       admin_unblock_ip: { Args: { _id: string }; Returns: boolean }
       admin_unblock_token: {
         Args: { _kind: string; _token_id: string }
@@ -3442,8 +3482,13 @@ export type Database = {
         }[]
       }
       rotate_membership_passwords: { Args: never; Returns: number }
+      service_send_live_chat: {
+        Args: { _message: Json; _sender: Json }
+        Returns: Json
+      }
       show_start_at: { Args: { _show_id: string }; Returns: string }
       sync_show_bundle: { Args: never; Returns: undefined }
+      token_cleanup_at: { Args: { _expires_at: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user" | "moderator"

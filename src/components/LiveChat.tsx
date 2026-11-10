@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { getBrowserId } from '@/lib/browserId';
-import { readMembershipCredentials } from '@/lib/membershipAccess';
+import { gatherChatCredentials } from '@/lib/chatCredentials';
 
 interface Msg {
   id: string;
@@ -25,6 +25,9 @@ interface SenderInfo {
   sender_role: string;
   user_id: string | null;
   phone: string;
+  email?: string;
+  username?: string;
+  identity_recorded?: boolean;
   token_tail: string;
   token_kind: string;
   created_by: string;
@@ -35,16 +38,6 @@ interface SenderInfo {
 
 // Kredensial akses yang sedang dipakai penonton (dari URL / penyimpanan HP),
 // dikirim ke server agar identitas pengirim chat tercatat privat.
-function gatherAccessCreds() {
-  const sp = new URLSearchParams(window.location.search);
-  const mem = readMembershipCredentials();
-  return {
-    token: sp.get('t') || sp.get('token') || '',
-    mtoken: sp.get('mtoken') || mem?.token || '',
-    btoken: sp.get('btoken') || '',
-    pw: sp.get('pw') || sp.get('mp') || mem?.password || '',
-  };
-}
 
 interface LiveChatProps {
   lite?: boolean;
@@ -294,7 +287,7 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
         message: msg,
         reply_to_id: replyTo?.id ?? null,
         browser_id: myBrowserId,
-        ...gatherAccessCreds(),
+        ...gatherChatCredentials(showId),
       },
     });
     const inserted = (data as { message?: Msg } | null)?.message;
@@ -423,7 +416,7 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
               )}
               <div className="flex items-baseline gap-1.5 flex-wrap text-sm leading-snug">
                 {canModerate ? (
-                  <button onClick={() => openSenderInfo(m)} title="Info pengirim" className={`font-semibold ${nameColor} hover:underline`}>{m.name}</button>
+                  <Button variant="link" onClick={() => openSenderInfo(m)} title="Info pengirim" className={`h-auto p-0 text-sm font-semibold ${nameColor}`}>{m.name}</Button>
                 ) : (
                   <span className={`font-semibold ${nameColor}`}>{m.name}</span>
                 )}
@@ -546,8 +539,11 @@ export default function LiveChat({ lite = false, showId = '' }: LiveChatProps) {
                 <div className="flex justify-between gap-2"><span className="text-muted-foreground">Nama</span><span className="font-medium text-right">{senderInfo.info.name}</span></div>
                 <div className="flex justify-between gap-2"><span className="text-muted-foreground">Peran</span><span className="font-medium">{senderInfo.info.sender_role === 'admin' ? '🛡️ Admin' : senderInfo.info.sender_role === 'moderator' ? '🔰 Moderator' : 'User'}</span></div>
                 {isAdmin && (
-                  <div className="flex justify-between gap-2"><span className="text-muted-foreground">Nomor HP</span><span className="font-medium">{senderInfo.info.phone || '—'}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Nomor HP</span><span className="font-medium text-right break-all">{senderInfo.info.phone || 'Tidak tercatat'}</span></div>
                 )}
+                {isAdmin && senderInfo.info.email && <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Email</span><span className="font-medium text-right break-all">{senderInfo.info.email}</span></div>}
+                {senderInfo.info.username && <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Akun</span><span className="font-medium text-right break-all">{senderInfo.info.username}</span></div>}
+                {senderInfo.info.identity_recorded === false && <p className="text-xs text-muted-foreground">Identitas akses pesan lama tidak tercatat.</p>}
                 <div className="flex justify-between gap-2"><span className="text-muted-foreground">Token</span><span className="font-medium">{senderInfo.info.token_tail ? `••••${senderInfo.info.token_tail}` : '—'}</span></div>
                 <div className="flex justify-between gap-2"><span className="text-muted-foreground">Jenis akses</span><span className="font-medium">{{ membership: 'Membership', show: 'Show', bundle: 'Bundel', order: 'Pembelian', password: 'Sandi', guest: 'Tamu' }[senderInfo.info.token_kind] || 'Tamu'}</span></div>
                 {senderInfo.info.created_by && (

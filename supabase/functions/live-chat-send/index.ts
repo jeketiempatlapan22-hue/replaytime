@@ -24,10 +24,10 @@ Deno.serve(async (req) => {
     if (!message) return json({ ok: false, error: "Pesan kosong" }, 400);
     if (!browser_id) return json({ ok: false, error: "browser_id wajib" }, 400);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return json({ ok: false, error: "Layanan chat belum tersedia" }, 503);
+    const supabase = createClient(url, key);
 
     // Tolak browser yang diblokir
     const { data: blocked } = await supabase
@@ -59,10 +59,10 @@ Deno.serve(async (req) => {
     let tokenKind = "";
     let createdBy = "";
 
-    if (credMtoken) {
+    if (credMtoken && !credToken && !credBtoken) {
       const { data: mt } = await supabase
         .from("membership_tokens").select("phone, token, created_by")
-        .eq("token", credMtoken).maybeSingle();
+        .eq("token", credMtoken).eq("revoked", false).gt("expires_at", new Date().toISOString()).maybeSingle();
       if (mt) {
         phone = mt.phone || "";
         tokenTail = tail6(mt.token);
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     if (!tokenKind && credBtoken) {
       const { data: bt } = await supabase
         .from("show_bundle_tokens").select("phone, token")
-        .eq("token", credBtoken).maybeSingle();
+        .eq("token", credBtoken).eq("revoked", false).gt("expires_at", new Date().toISOString()).maybeSingle();
       if (bt) {
         phone = bt.phone || "";
         tokenTail = tail6(bt.token);
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     if (!tokenKind && credToken) {
       const { data: ord } = await supabase
         .from("orders").select("user_phone, access_token")
-        .eq("access_token", credToken).maybeSingle();
+        .eq("access_token", credToken).eq("status", "paid").maybeSingle();
       if (ord) {
         phone = ord.user_phone || "";
         tokenTail = tail6(ord.access_token || "");
@@ -92,12 +92,19 @@ Deno.serve(async (req) => {
         createdBy = "pembelian";
       } else {
         const { data: st } = await supabase
-          .from("active_show_tokens").select("token, label")
+          .from("active_show_tokens").select("token, label, revoked, expires_at, show_id")
           .eq("token", credToken).maybeSingle();
-        if (st) {
+        if (st && !st.revoked && (!st.expires_at || new Date(st.expires_at).getTime() > Date.now()) && (!show_id || st.show_id === show_id)) {
           tokenTail = tail6(st.token);
           tokenKind = "show";
           createdBy = st.label || "";
+          // A reseller's delivery phone belongs to the reseller, not necessarily the viewer.
+          if (!st.label?.startsWith("reseller:")) {
+            const { data: delivery } = await supabase.from("token_deliveries")
+              .select("phone").eq("access_token", st.token).eq("source", "purchase")
+              .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+            phone = delivery?.phone || "";
+          }
         }
       }
     }
@@ -113,9 +120,8 @@ Deno.serve(async (req) => {
 
     const finalName = senderRole === "admin" ? (name || "Admin") : (name || "Anonim");
 
-    const { data: inserted, error: insErr } = await supabase
-      .from("live_messages")
-      .insert({
+    const { data: inserted, error: insErr } = await supabase.rpc("service_send_live_chat", {
+      _message: {
         browser_id,
         name: finalName,
         message,
@@ -125,20 +131,10 @@ Deno.serve(async (req) => {
         show_id,
         sender_role: senderRole,
         user_id: userId,
-      })
-      .select()
-      .single();
-    if (insErr || !inserted) return json({ ok: false, error: "Gagal mengirim pesan" }, 500);
-
-    await supabase.from("live_message_senders").insert({
-      message_id: inserted.id,
-      user_id: userId,
-      phone,
-      token_tail: tokenTail,
-      token_kind: tokenKind,
-      created_by: createdBy,
-      browser_id,
+      },
+      _sender: { phone, token_tail: tokenTail, token_kind: tokenKind, created_by: createdBy },
     });
+    if (insErr || !inserted) return json({ ok: false, error: "Gagal mengirim pesan" }, 500);
 
     return json({ ok: true, message: inserted });
   } catch (e) {
