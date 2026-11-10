@@ -71,24 +71,10 @@ export default function MembershipProofsAdmin() {
     toast({ title: action === 'reject' ? 'Pesanan ditolak' : 'Status dikembalikan ke Pending' });
   };
   const copyTokenMessage = async (r: Proof) => {
-    let o = r.show_order_id ? orderInfo[r.show_order_id] : undefined;
-    if (r.show_order_id) {
-      const { data } = await supabase.from('orders').select('id,status,access_token,show_id,replay_id,kind,item_title,user_phone').eq('id', r.show_order_id).maybeSingle();
-      if (data) o = data as any;
-    }
-    const tok = o?.access_token || results[r.id];
-    if (!o || !tok) return toast({ title: 'Token belum ada', description: 'Setujui pesanan dulu agar token terbit.', variant: 'destructive' });
-    const origin = window.location.origin;
-    const link = o.kind === 'bundle' ? `${origin}/shows?bt=${tok}`
-      : o.show_id && !o.replay_id ? `${origin}/live?show=${o.show_id}&t=${tok}`
-      : `${origin}/akses?token=${tok}${o.replay_id ? `&replay=${o.replay_id}` : ''}`;
-    let pw = '';
-    if (o.replay_id) {
-      const { data: rp } = await (supabase as any).rpc('admin_get_replays');
-      pw = ((rp || []) as any[]).find((x) => x.id === o?.replay_id)?.password || '';
-    }
-    const msg = `📱 *Nomor Pembeli:* ${o.user_phone || r.phone || '-'}\n\n🎤 *${o.item_title || r.package_name}*\n\n🔗 *Link Akses:*\n${link}\n\n🎬 *Link Replay:* ${origin}${pw ? `\n🔐 Sandi Replay: *${pw}*` : ''}\n\n👤 Hanya untuk 1 perangkat pertama.\n\n— *ReplayTime* 💖`;
-    void copyText(msg, 'Link token + info replay');
+    const { data, error } = await supabase.functions.invoke('admin-approve-proof', { body: { proof_id: r.id, action: 'message' } });
+    const res = data as any;
+    if (error || !res?.ok) return toast({ title: 'Token belum ada', description: 'Setujui pesanan dulu agar token terbit.', variant: 'destructive' });
+    void copyText(res.message, 'Link token + info replay');
   };
 
   const load = async () => {
@@ -343,7 +329,7 @@ export default function MembershipProofsAdmin() {
                           <RotateCcw className="w-3 h-3 mr-1" />Reset
                         </Button>
                       )}
-                      {r.show_order_id && (
+                      {(r.show_order_id || r.order_id) && (
                         <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => copyTokenMessage(r)}>
                           <Copy className="w-3 h-3 mr-1" />Salin Link Token + Info Replay
                         </Button>

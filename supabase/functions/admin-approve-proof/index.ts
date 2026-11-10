@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const parsed = z.object({
-      proof_id: z.string().uuid(), action: z.enum(['approve', 'reject', 'reset']).default('approve'),
+      proof_id: z.string().uuid(), action: z.enum(['approve', 'reject', 'reset', 'message']).default('approve'),
       kind: z.enum(['membership', 'show', 'replay']).optional(), target_id: z.string().uuid().optional(),
       phone: z.string().max(30).optional(), email: z.string().max(254).optional(),
     }).safeParse(await req.json().catch(() => ({})));
@@ -53,6 +53,11 @@ Deno.serve(async (req) => {
     }
 
     const action = body.action;
+    if (action === 'message') {
+      const msg = await buildCopyMessage(admin, proof);
+      if (!msg) return new Response(JSON.stringify({ error: 'token_not_ready' }), { status: 409, headers: corsHeaders });
+      return new Response(JSON.stringify({ ok: true, message: msg }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     if (action === 'reject' || action === 'reset') {
       const table = proof.order_id ? 'membership_orders' : 'orders';
       const linkedId = proof.order_id || proof.show_order_id;
