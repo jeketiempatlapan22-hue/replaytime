@@ -3,7 +3,9 @@
 ## Retensi token dan identitas chat
 - [x] Simpan token hingga tujuh hari setelah kedaluwarsa tanpa memperpanjang akses; sembilan tes lulus.
 - [x] Pulihkan 28 catatan token dua hari terakhir ke riwayat Token Factory tanpa mengaktifkan akses ulang.
-- [ ] Pemulihan penuh token dan data pembeli — show asal sudah terhapus dan identitas pembeli tidak tersimpan dalam catatan reseller; perlu backup yang memuat baris asli.
+- [x] Pulihkan show Homecoming dari cadangan sebagai selesai/tidak aktif, arsipkan 5.047 link historis, pulihkan 253 token admin/reseller/pembeli, dan pastikan seluruh 133 pembelian berbayar tercakup tanpa memperpanjang akses.
+- [ ] Lengkapi identitas penerima token admin/reseller yang tidak tercatat — memerlukan catatan penerima asli; cadangan lama tidak menyimpan token rahasia sehingga 30 token lain dari cadangan tidak dapat dicocokkan secara pasti.
+- [ ] Verifikasi tampilan Token Factory dengan admin masuk — sesi akun peminta tidak tersedia; halaman login tanpa error dan pemeriksaan data pemulihan sudah lulus.
 - [x] Perbaiki pencatatan atomik dan tampilan identitas pengirim; pesan uji admin terkirim, dialog terbuka, metadata tercatat, pesan uji dihapus. Akun admin uji tidak memiliki profil/nomor/email profil.
 
 ## Grup pembeli show dan membership

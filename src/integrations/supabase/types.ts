@@ -2375,39 +2375,57 @@ export type Database = {
       token_factory_history: {
         Row: {
           created_at: string
+          email: string
           expires_at: string | null
           id: string
           kind: string
           label: string
+          order_id: string | null
           original_link: string
           phone: string
           restored_at: string
+          show_id: string | null
+          source: string
           title: string
           token: string
+          user_id: string | null
+          username: string
         }
         Insert: {
           created_at: string
+          email?: string
           expires_at?: string | null
           id?: string
           kind: string
           label?: string
+          order_id?: string | null
           original_link?: string
           phone?: string
           restored_at?: string
+          show_id?: string | null
+          source?: string
           title?: string
           token: string
+          user_id?: string | null
+          username?: string
         }
         Update: {
           created_at?: string
+          email?: string
           expires_at?: string | null
           id?: string
           kind?: string
           label?: string
+          order_id?: string | null
           original_link?: string
           phone?: string
           restored_at?: string
+          show_id?: string | null
+          source?: string
           title?: string
           token?: string
+          user_id?: string | null
+          username?: string
         }
         Relationships: []
       }

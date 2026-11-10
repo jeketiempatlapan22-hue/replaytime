@@ -22,7 +22,8 @@
 - Server 3 (SForge master-final) runs HlsPlayer in `dvr` mode on Live (full back buffer, no edge jumps) and is the default first replay source before YouTube, so viewers can rewind live and replays play without manual setup.
 - Compute show/bundle token expiry only in DB triggers on active_show_tokens/show_bundle_tokens (follow show reschedules) and purge hourly via purge_expired_membership_tokens, so every issuing path shares one rule.
 - Keep token retention separate from access expiry via token_cleanup_at, so admin history never grants extra viewing time.
-- Restore deleted-source tokens only into admin-only token_factory_history, never recreate shows or infer buyer phones from reseller phones, so recovery cannot fabricate identities or revive access.
+- Restore deleted-source tokens into admin-only token_factory_history; restore a show only from original backup metadata as inactive, never infer buyer identities from reseller phones or revive expired access.
+- Paginate recovered token history and resolve owner metadata only from matching orders/profiles, so large recovery batches remain complete and buyer identities are not fabricated.
 - Insert live messages and private sender metadata atomically through a service-role-only RPC; resolve account information only in admin RPCs, so missing metadata cannot silently accompany successful chat sends.
 - Live chat messages are sent only through the live-chat-send edge function, which records sender identity privately in live_message_senders (service-role only) and sets live_messages.sender_role; chat moderation (delete/block/unblock, moderator management) goes through SECURITY DEFINER RPCs (mod_*, admin_set_moderator), so phone numbers never reach clients and moderator rights stay server-enforced.
 

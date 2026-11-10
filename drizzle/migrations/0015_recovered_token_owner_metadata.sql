@@ -1,0 +1,2 @@
+ALTER TABLE public.token_factory_history ADD COLUMN IF NOT EXISTS user_id uuid, ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS username text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS order_id uuid, ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS show_id uuid;
+COMMENT ON COLUMN public.token_factory_history.phone IS 'Buyer phone only from a matching purchase, never reseller phone.';
