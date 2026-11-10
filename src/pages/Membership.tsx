@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
+import WaPhoneNotice from '@/components/WaPhoneNotice';
+import { checkWaNumber, waBlocksPurchase, type WaCheckStatus } from '@/lib/waCheck';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Crown, Coins, Loader2, CheckCircle2, Smartphone, Mail, Sparkles, ShieldCheck, Copy, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -68,6 +70,7 @@ export default function Membership() {
   const [pickOpen, setPickOpen] = useState(false);
   const [picked, setPicked] = useState<Pkg | null>(null);
   const [email, setEmail] = useState('');
+  const [waStatus, setWaStatus] = useState<WaCheckStatus>('idle');
   const [phone, setPhone] = useState(() => { try { return localStorage.getItem('replaytime-phone') || ''; } catch { return ''; } });
   const [payMode, setPayMode] = useState<'qris' | 'coins'>('qris');
   const [submitting, setSubmitting] = useState(false);
@@ -182,6 +185,10 @@ export default function Membership() {
     const ph = normalizePhone(phone);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) { toast.error('Email tidak valid'); return; }
     if (!/^62\d{8,13}$/.test(ph)) { toast.error('Nomor WhatsApp tidak valid'); return; }
+    setWaStatus('checking');
+    const wa = await checkWaNumber(ph);
+    setWaStatus(wa);
+    if (waBlocksPurchase(wa)) { toast.error('Nomor ini tidak terdaftar di WhatsApp.'); return; }
     try { localStorage.setItem('replaytime-phone', phone); } catch { /* ignore */ }
 
     setSubmitting(true);
@@ -376,9 +383,10 @@ export default function Membership() {
               <Label className="text-xs">Nomor WhatsApp</Label>
               <div className="relative">
                 <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-9" placeholder="0812xxxx" />
+                <Input value={phone} onChange={(e) => { setPhone(e.target.value); setWaStatus('idle'); }} className="pl-9" placeholder="0812xxxx" />
               </div>
               <p className="text-[10px] text-muted-foreground">Link token akan dikirim ke nomor ini.</p>
+              <WaPhoneNotice status={waStatus} adminWa={adminWa} item={`Membership ${picked?.name || ''}`} phone={normalizePhone(phone)} />
             </div>
 
             <div className="space-y-1">

@@ -1,3 +1,4 @@
+import { waGuard } from './wa-check.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { dokuCreateQrisCompat, dokuConfiguration } from './doku.ts';
 // Create a DOKU dynamic QRIS order for an active show purchase.
@@ -41,6 +42,7 @@ Deno.serve(async (req) => {
     const phone = tgChatId ? `tg${tgChatId}` : normalizePhone(String(body.phone ?? ''));
 
     if (!tgChatId && !validPhone(phone)) return new Response(JSON.stringify({ error: 'invalid phone' }), { status: 400, headers: corsHeaders });
+    { const wa = await waGuard(phone); if (wa) return new Response(JSON.stringify({ error: wa }), { status: 400, headers: corsHeaders }); }
 
     if (!['show', 'replay', 'replay_only', 'bundle'].includes(kind)) {
       return new Response(JSON.stringify({ error: 'invalid kind' }), { status: 400, headers: corsHeaders });

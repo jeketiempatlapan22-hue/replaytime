@@ -1,3 +1,4 @@
+import { waGuard } from '../_shared/wa-check.ts';
 import { pakasirCreateQrisCompat } from '../_shared/pakasir.ts';
 // Reserve sebuah slot membership lalu buat QRIS pakasir. Guest OK untuk QRIS (login opsional).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -44,6 +45,7 @@ Deno.serve(async (req) => {
     if (!package_id) return new Response(JSON.stringify({ error: 'missing_package' }), { status: 400, headers: corsHeaders });
     if (!validEmail(email)) return new Response(JSON.stringify({ error: 'invalid_email' }), { status: 400, headers: corsHeaders });
     if (!validPhone(phone)) return new Response(JSON.stringify({ error: 'invalid_phone' }), { status: 400, headers: corsHeaders });
+    { const wa = await waGuard(phone); if (wa) return new Response(JSON.stringify({ error: wa }), { status: 400, headers: corsHeaders }); }
 
 
     const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);

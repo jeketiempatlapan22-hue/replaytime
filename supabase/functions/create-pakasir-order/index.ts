@@ -1,3 +1,4 @@
+import { waGuard } from '../_shared/wa-check.ts';
 import { pakasirCreateQrisCompat } from '../_shared/pakasir.ts';
 // Create a Pakasir dynamic QRIS order for an active show purchase.
 // Each call creates a NEW order_id; webhook will deliver token via WhatsApp.
@@ -42,6 +43,7 @@ Deno.serve(async (req) => {
     const phone = tgChatId ? `tg${tgChatId}` : normalizePhone(String(body.phone ?? ''));
 
     if (!tgChatId && !validPhone(phone)) return new Response(JSON.stringify({ error: 'invalid phone' }), { status: 400, headers: corsHeaders });
+    { const wa = await waGuard(phone); if (wa) return new Response(JSON.stringify({ error: wa }), { status: 400, headers: corsHeaders }); }
 
     if (!['show', 'replay', 'replay_only', 'bundle'].includes(kind)) {
       return new Response(JSON.stringify({ error: 'invalid kind' }), { status: 400, headers: corsHeaders });

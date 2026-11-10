@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import WaPhoneNotice from '@/components/WaPhoneNotice';
+import { checkWaNumber, waBlocksPurchase, type WaCheckStatus } from '@/lib/waCheck';
 import { Loader2, CheckCircle2, Copy, Smartphone, ExternalLink, MessageCircle, AlertTriangle, Coins, Lock, Upload, Play } from 'lucide-react';
 import { setShowPurchase, setReplayPurchase } from '@/lib/purchases';
 import { rememberPendingOrder } from '@/lib/purchaseSync';
@@ -46,6 +48,7 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
   const [coinPrice, setCoinPrice] = useState<number>(0);
   const [coinBalance, setCoinBalance] = useState<number>(0);
   const [coinBusy, setCoinBusy] = useState(false);
+  const [waStatus, setWaStatus] = useState<WaCheckStatus>('idle');
   const [phone, setPhone] = useState(() => { try { return localStorage.getItem('replaytime-phone') || ''; } catch { return ''; } });
   const [status, setStatus] = useState<Status>('form');
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -244,6 +247,10 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
       toast.error('Nominal pembayaran belum diatur. Hubungi admin.');
       return;
     }
+    setWaStatus('checking');
+    const wa = await checkWaNumber(norm);
+    setWaStatus(wa);
+    if (waBlocksPurchase(wa)) { toast.error('Nomor ini tidak terdaftar di WhatsApp.'); return; }
     try { localStorage.setItem('replaytime-phone', phone); } catch { /* ignore */ }
     // Admin mengaktifkan QRIS statis: berlaku untuk semua pembelian (show maupun replay).
     if (useStaticQris) { setStatus('static_qris'); return; }
@@ -401,11 +408,12 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
                   <Label htmlFor="phone-buy">Nomor WhatsApp</Label>
                   <div className="relative">
                     <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="phone-buy" type="tel" inputMode="numeric" placeholder="0812xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-9" />
+                    <Input id="phone-buy" type="tel" inputMode="numeric" placeholder="0812xxxxxxxx" value={phone} onChange={(e) => { setPhone(e.target.value); setWaStatus('idle'); }} className="pl-9" />
                   </div>
                   <p className="text-xs text-muted-foreground">Token akses akan dikirim ke nomor ini setelah pembayaran lunas.</p>
+                  <WaPhoneNotice status={waStatus} adminWa={ownerWa} item={itemTitle} phone={normalizePhone(phone)} extra={`• Harga: Rp ${payAmount.toLocaleString('id-ID')}`} />
                 </div>
-                <Button className="w-full" onClick={handleCreate} disabled={!phone}>
+                <Button className="w-full" onClick={handleCreate} disabled={!phone || waStatus === 'checking'}>
                   Lanjut ke Pembayaran
                 </Button>
               </TabsContent>

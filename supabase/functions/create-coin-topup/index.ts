@@ -1,3 +1,4 @@
+import { waGuard } from '../_shared/wa-check.ts';
 import { pakasirCreateQrisCompat } from '../_shared/pakasir.ts';
 // Create a Pakasir QRIS order to top-up coins for the authenticated user.
 // kind='coin_topup' so webhook/poll credit coins instead of issuing a token.
@@ -37,6 +38,7 @@ Deno.serve(async (req) => {
     const packageId = String(body.package_id ?? '');
     const phone = normalizePhone(String(body.phone ?? ''));
     if (!validPhone(phone)) return new Response(JSON.stringify({ error: 'invalid_phone' }), { status: 400, headers: corsHeaders });
+    { const wa = await waGuard(phone); if (wa) return new Response(JSON.stringify({ error: wa }), { status: 400, headers: corsHeaders }); }
     if (!packageId) return new Response(JSON.stringify({ error: 'missing_package' }), { status: 400, headers: corsHeaders });
 
     const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);

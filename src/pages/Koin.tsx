@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import WaPhoneNotice from '@/components/WaPhoneNotice';
+import { checkWaNumber, waBlocksPurchase, type WaCheckStatus } from '@/lib/waCheck';
 import QRCode from 'qrcode';
 import { useNavigate } from 'react-router-dom';
 import { Coins, ArrowLeft, Loader2, CheckCircle2, Smartphone } from 'lucide-react';
@@ -29,6 +31,7 @@ export default function Koin() {
   const [balance, setBalance] = useState<number>(0);
   const [pkgs, setPkgs] = useState<Pkg[]>([]);
   const [txs, setTxs] = useState<Tx[]>([]);
+  const [waStatus, setWaStatus] = useState<WaCheckStatus>('idle');
   const [phone, setPhone] = useState(() => { try { return localStorage.getItem('replaytime-phone') || ''; } catch { return ''; } });
   const [topupOpen, setTopupOpen] = useState(false);
   const [pickedPkg, setPickedPkg] = useState<Pkg | null>(null);
@@ -63,6 +66,10 @@ export default function Koin() {
   const startTopup = async (pkg: Pkg) => {
     const norm = normalizePhone(phone);
     if (!/^62\d{8,13}$/.test(norm)) { toast.error('Nomor WhatsApp tidak valid'); return; }
+    setWaStatus('checking');
+    const wa = await checkWaNumber(norm);
+    setWaStatus(wa);
+    if (waBlocksPurchase(wa)) { toast.error('Nomor ini tidak terdaftar di WhatsApp.'); return; }
     try { localStorage.setItem('replaytime-phone', phone); } catch { /* ignore */ }
     setPickedPkg(pkg); setTopupOpen(true); setPaid(false); setQrDataUrl(''); setOrderId(null);
     setCreating(true);
@@ -128,8 +135,9 @@ export default function Koin() {
               <Label className="text-xs">Nomor WhatsApp</Label>
               <div className="relative">
                 <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812xxxx" className="pl-9" />
+                <Input value={phone} onChange={(e) => { setPhone(e.target.value); setWaStatus('idle'); }} placeholder="0812xxxx" className="pl-9" />
               </div>
+              <WaPhoneNotice status={waStatus} />
             </div>
             {pkgs.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Belum ada paket koin tersedia.</p>}
             <div className="grid grid-cols-2 gap-2">
