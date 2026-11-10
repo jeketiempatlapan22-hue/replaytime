@@ -235,6 +235,14 @@ function TokenTable({ kind, status }: { kind: Kind; status: Status }) {
 export default function TokenFactoryAdmin() {
   const [kind, setKind] = useState<Kind>('show');
   const [status, setStatus] = useState<Status>('active');
+  const [history, setHistory] = useState<{ id: string; token: string; kind: string; title: string; label: string; phone: string; created_at: string; expires_at: string | null; original_link: string }[]>([]);
+  useEffect(() => {
+    supabase.from('token_factory_history').select('*').order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) toast({ title: 'Riwayat gagal dimuat', description: error.message, variant: 'destructive' });
+        else setHistory(data || []);
+      });
+  }, []);
   return (
     <Card>
       <CardHeader>
@@ -267,6 +275,22 @@ export default function TokenFactoryAdmin() {
             </Tabs>
           </TabsContent>
         </Tabs>
+        {history.length > 0 && <section className="space-y-2 border-t border-border pt-3">
+          <h3 className="text-sm font-semibold">Riwayat token dipulihkan ({history.length})</h3>
+          {history.map(r => <div key={r.id} className="rounded-lg border border-border p-3 space-y-1 text-xs">
+            <div className="font-medium text-sm break-words">{r.title}</div>
+            <Badge variant="secondary">Riwayat · {r.kind}</Badge>
+            <div className="font-mono break-all">{r.token}</div>
+            <div className="break-all">Dibuat oleh: {r.label}</div>
+            <div className="break-all">Pembeli: {r.phone || 'Tidak tercatat'}</div>
+            <div>Dibuat: {new Date(r.created_at).toLocaleString('id-ID')}</div>
+            <div>Berakhir: {r.expires_at ? new Date(r.expires_at).toLocaleString('id-ID') : 'Tidak tercatat'}</div>
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" variant="outline" onClick={() => copy(r.token, 'Token')}><Copy className="w-3.5 h-3.5 mr-1" />Token</Button>
+              {r.original_link && <Button size="sm" variant="outline" onClick={() => copy(r.original_link, 'Link')}><Link2 className="w-3.5 h-3.5 mr-1" />Link</Button>}
+            </div>
+          </div>)}
+        </section>}
       </CardContent>
     </Card>
   );

@@ -1,9 +1,10 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
 ## Retensi token dan identitas chat
-- [ ] Simpan token hingga tujuh hari setelah kedaluwarsa tanpa memperpanjang akses.
-- [ ] Pulihkan token dua hari terakhir dari catatan yang masih tersedia, beserta identitas yang dapat diverifikasi.
-- [ ] Perbaiki pencatatan dan tampilan identitas pengirim chat; uji dengan akun admin.
+- [x] Simpan token hingga tujuh hari setelah kedaluwarsa tanpa memperpanjang akses; sembilan tes lulus.
+- [x] Pulihkan 28 catatan token dua hari terakhir ke riwayat Token Factory tanpa mengaktifkan akses ulang.
+- [ ] Pemulihan penuh token dan data pembeli — show asal sudah terhapus dan identitas pembeli tidak tersimpan dalam catatan reseller; perlu backup yang memuat baris asli.
+- [x] Perbaiki pencatatan atomik dan tampilan identitas pengirim; pesan uji admin terkirim, dialog terbuka, metadata tercatat, pesan uji dihapus. Akun admin uji tidak memiliki profil/nomor/email profil.
 
 ## Grup pembeli show dan membership
 - [x] Simpan grup membership dan pilihan grup reseller per token.
