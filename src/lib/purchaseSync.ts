@@ -8,7 +8,22 @@ let lastRun = 0;
 // Pesanan QRIS yang belum terkonfirmasi di perangkat ini. Dicek ulang ke Pakasir
 // (lewat server) setiap sinkronisasi agar pembayaran tidak terlewat walau dialog ditutup.
 const PENDING_KEY = 'replaytime-pending-orders';
-interface PendingOrder { id: string; kind: string; showId: string | null; replayId: string | null; at: number }
+interface PendingOrder { id: string; kind: string; showId: string | null; replayId: string | null; at: number; state?: 'awaiting_approval' | 'rejected' }
+
+export type ApprovalState = 'awaiting_approval' | 'rejected';
+/** Status persetujuan admin untuk show/replay yang dibeli di perangkat ini (login, guest, maupun tanpa login). */
+export function getApprovalState(showId?: string | null, replayId?: string | null): { state: ApprovalState; orderId: string } | null {
+  const hit = readPending().filter((p) => p.state && ((showId && p.showId === showId) || (replayId && p.replayId === replayId))).pop();
+  return hit?.state ? { state: hit.state, orderId: hit.id } : null;
+}
+export function markApprovalState(id: string, state: ApprovalState) {
+  const list = readPending();
+  const p = list.find((x) => x.id === id);
+  if (!p || p.state === state) return;
+  p.state = state;
+  writePending(list);
+  try { window.dispatchEvent(new Event('replaytime-purchases-updated')); } catch { /* ignore */ }
+}
 
 function readPending(): PendingOrder[] {
   try { const v = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
@@ -23,7 +38,8 @@ export function rememberPendingOrder(id: string, o: { kind: string; showId: stri
 
 async function checkPendingOrders(): Promise<boolean> {
   const cutoff = Date.now() - 2 * 24 * 3600_000;
-  const list = readPending().filter((p) => p.at > cutoff);
+  const longCutoff = Date.now() - 14 * 24 * 3600_000;
+  const list = readPending().filter((p) => p.at > (p.state ? longCutoff : cutoff));
   const keep: PendingOrder[] = [];
   let changed = false;
   for (const p of list) {
@@ -46,6 +62,9 @@ async function checkPendingOrders(): Promise<boolean> {
         continue;
       }
       if (['expired', 'canceled', 'cancelled', 'failed'].includes(String(c?.status || ''))) continue;
+      if (c?.status === 'awaiting_approval' || c?.status === 'rejected') {
+        if (p.state !== c.status) { p.state = c.status; changed = true; }
+      }
     } catch { /* coba lagi nanti */ }
     keep.push(p);
   }

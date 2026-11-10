@@ -1,6 +1,8 @@
 import { useReplayDisplay } from '@/hooks/useReplayDisplay';
 import { useAdminWa } from '@/hooks/useAdminWa';
 import { adminWaLink } from '@/lib/adminWa';
+import PendingApprovalNotice from '@/components/PendingApprovalNotice';
+import { getApprovalState, type ApprovalState } from '@/lib/purchaseSync';
 import { displayShortTitle } from '@/lib/abbrev';
 import { memo, useEffect, useState, useMemo } from 'react';
 import { Lock, Unlock, Play, Calendar, Users, Tag, Star, Tv, Bookmark, BookmarkCheck, ShoppingCart, Copy, Crown } from 'lucide-react';
@@ -72,6 +74,7 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
   const [checking, setChecking] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [purchasedToken, setPurchasedToken] = useState<string>('');
+  const [approval, setApproval] = useState<{ state: ApprovalState; orderId: string } | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const { user } = useAuth();
 
@@ -80,6 +83,7 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
     const refresh = () => {
       const p = getReplayPurchase(replay.id);
       setPurchasedToken(p?.token || '');
+      setApproval(getApprovalState(null, replay.id));
     };
     refresh();
     window.addEventListener('storage', refresh);
@@ -352,7 +356,9 @@ function ReplayCardComponent({ replay, isUnlocked, onUnlock, onWatch, onUnlockAn
             </div>
           </div>
 
-          {locked ? (
+          {approval && !purchasedToken && !membershipCovered ? (
+            <PendingApprovalNotice state={approval.state} adminWa={adminWa} itemTitle={replay.title} date={replay.date} orderId={approval.orderId} />
+          ) : locked ? (
             <div className="space-y-2 pt-1">
               {membershipCovered && !isPurchased ? (
                 <Button type="button" className="w-full" onClick={() => {

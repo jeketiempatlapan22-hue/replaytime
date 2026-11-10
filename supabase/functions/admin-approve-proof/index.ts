@@ -51,6 +51,20 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'proof_not_found' }), { status: 404, headers: corsHeaders });
     }
 
+    // Tolak / Reset (hanya untuk order show/replay/bundle).
+    const action = String((body as any).action || 'approve');
+    if (action === 'reject' || action === 'reset') {
+      if (!proof.show_order_id) {
+        return new Response(JSON.stringify({ error: 'only_show_orders' }), { status: 400, headers: corsHeaders });
+      }
+      const { data: so } = await admin.from('orders').select('id,status').eq('id', proof.show_order_id).maybeSingle();
+      if (!so) return new Response(JSON.stringify({ error: 'show_order_not_found' }), { status: 404, headers: corsHeaders });
+      if (so.status === 'paid') return new Response(JSON.stringify({ error: 'already_approved' }), { status: 409, headers: corsHeaders });
+      await admin.from('orders').update({ status: action === 'reject' ? 'rejected' : 'awaiting_approval' }).eq('id', so.id);
+      await admin.from('membership_payment_proofs').update({ handled: action === 'reject' }).eq('id', proof.id);
+      return new Response(JSON.stringify({ ok: true, status: action === 'reject' ? 'rejected' : 'awaiting_approval' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     let orderKind: 'membership' | 'show' | null = null;
     let orderIdToPoll: string | null = null;
 

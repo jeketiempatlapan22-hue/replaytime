@@ -1,3 +1,4 @@
+import { holdForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Background poller: scans pending orders, queries Pakasir, marks paid + delivers WA.
@@ -175,6 +176,7 @@ async function processOrder(admin: ReturnType<typeof createClient>, order: any, 
       }
       return { id: order.id, status: verified.status || 'pending' };
     }
+    if (await holdForApproval(admin, order, 'Pakasir')) return { id: order.id, status: 'awaiting_approval' };
   } else if (order.status !== 'paid') {
     return { id: order.id, skipped: 'payment_not_verified' };
   }

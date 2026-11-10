@@ -14,6 +14,8 @@ import { setShowPurchase, setReplayPurchase } from '@/lib/purchases';
 import { rememberPendingOrder } from '@/lib/purchaseSync';
 import MembershipProofUpload from '@/components/MembershipProofUpload';
 import { adminWaNumber } from '@/lib/adminWa';
+import PendingApprovalNotice from '@/components/PendingApprovalNotice';
+import { markApprovalState } from '@/lib/purchaseSync';
 import AccessInfoCard from '@/components/AccessInfoCard';
 import { getShowBundle, claimBundleToken, persistBundleShowTokens, rememberBundleToken } from '@/lib/bundle';
 
@@ -29,7 +31,7 @@ interface Props {
   defaultMethod?: 'qris' | 'coin';
 }
 
-type Status = 'form' | 'creating' | 'qr' | 'paid' | 'expired' | 'static_qris';
+type Status = 'form' | 'creating' | 'qr' | 'paid' | 'expired' | 'static_qris' | 'awaiting';
 const EXPIRY_MS = 30 * 60 * 1000;
 
 export default function BuyShowDialog({ open, onOpenChange, showId = '', showTitle, amount, itemTitle, replayId, kind = 'show', defaultMethod }: Props) {
@@ -203,6 +205,11 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
       try {
         const { data: chk } = await supabase.functions.invoke('check-pakasir-status', { body: { order_id: orderId } });
         const c = chk as any;
+        if (c?.status === 'awaiting_approval' || c?.status === 'rejected') {
+          markApprovalState(orderId, c.status);
+          setStatus('awaiting');
+          return;
+        }
         if (c?.status === 'paid' && c?.access_token) {
           setAccessToken(c.access_token);
           setWaSent(typeof c.sent === 'boolean' ? c.sent : null);
@@ -484,6 +491,13 @@ export default function BuyShowDialog({ open, onOpenChange, showId = '', showTit
             <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => setProofOpen(true)}>
               <Upload className="w-3.5 h-3.5" /> Sudah bayar? Kirim bukti transfer
             </Button>
+          </div>
+        )}
+
+        {status === 'awaiting' && (
+          <div className="space-y-2 py-2">
+            <PendingApprovalNotice state="awaiting_approval" adminWa={ownerWa} itemTitle={itemTitle} orderId={orderId || undefined} phone={normalizePhone(phone)} />
+            <Button variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>Tutup</Button>
           </div>
         )}
 

@@ -21,6 +21,8 @@ import AnonReplayPassword from '@/components/AnonReplayPassword';
 import { useReplayDisplay } from '@/hooks/useReplayDisplay';
 import { useAdminWa } from '@/hooks/useAdminWa';
 import { adminWaLink } from '@/lib/adminWa';
+import PendingApprovalNotice from '@/components/PendingApprovalNotice';
+import { getApprovalState, type ApprovalState } from '@/lib/purchaseSync';
 
 
 
@@ -87,6 +89,7 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
   // Per-show unlock check (sessionStorage live unlock OR localStorage purchase)
   const [hasAccess, setHasAccess] = useState(false);
   const [purchasedToken, setPurchasedToken] = useState<string>('');
+  const [approval, setApproval] = useState<{ state: ApprovalState; orderId: string } | null>(null);
   const [membershipToken, setMembershipToken] = useState<string>('');
   const [membershipPassword, setMembershipPassword] = useState<string>('');
   useEffect(() => {
@@ -97,6 +100,7 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
         const local = readMembershipCredentials();
         const membership = local?.token ? local : (accountMembership?.token ? { token: accountMembership.token, password: accountMembership.password } : null);
         setPurchasedToken(purchase?.token || '');
+        setApproval(getApprovalState(show.id, show.replay_id));
         // Show sudah jadi replay: token show juga membuka replay-nya.
         if (purchase?.token && show.replay_id && !getReplayPurchase(show.replay_id)) {
           setReplayPurchase(show.replay_id, { token: purchase.token, paidAt: Date.now() });
@@ -297,7 +301,9 @@ export default function ActiveShowCard({ show, index = 0 }: { show: ActiveShow; 
 
 
         {/* Action buttons */}
-        {lockedMode ? (
+        {approval && !purchasedToken && !membershipToken ? (
+          <PendingApprovalNotice state={approval.state} adminWa={adminWa} itemTitle={show.title} date={show.show_date} orderId={approval.orderId} />
+        ) : lockedMode ? (
           <div className="pt-2 space-y-2">
             {/* Member aktif: langsung tonton (dipindah ke Website B bila diatur). */}
             {membershipToken ? (

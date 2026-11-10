@@ -1,3 +1,4 @@
+import { holdForApproval } from './approval-gate.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { primeReplayHost, rewriteReplay } from './replay-origin.ts';
 // Polls DOKU for a given order's payment status. If paid, marks the order
@@ -310,12 +311,18 @@ Deno.serve(async (req) => {
 
     // Kalau order sudah ditandai paid oleh admin (approve manual bukti transaksi),
     // lewati verifikasi DOKU agar finalize + kirim WA tetap jalan.
+    if (order.status === 'awaiting_approval' || order.status === 'rejected') {
+      return new Response(JSON.stringify({ ok: true, status: order.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     if (order.status !== 'paid') {
       const verified = await verifyDokuPaid(apiKey, slug, order.pakasir_order_id || '', Number(order.amount || 0));
       if (!verified.paid) {
         return new Response(JSON.stringify({ ok: true, status: verified.status || 'pending' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      if (await holdForApproval(admin, order)) {
+        return new Response(JSON.stringify({ ok: true, status: order.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 

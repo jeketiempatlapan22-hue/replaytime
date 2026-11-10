@@ -1,3 +1,4 @@
+import { holdForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Polls Pakasir for a given order's payment status. If paid, marks the order
@@ -314,12 +315,18 @@ Deno.serve(async (req) => {
 
     // Kalau order sudah ditandai paid oleh admin (approve manual bukti transaksi),
     // lewati verifikasi Pakasir agar finalize + kirim WA tetap jalan.
+    if (order.status === 'awaiting_approval' || order.status === 'rejected') {
+      return new Response(JSON.stringify({ ok: true, status: order.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     if (order.status !== 'paid') {
       const verified = await verifyPakasirPaid(apiKey, slug, order.pakasir_order_id || '', Number(order.amount || 0));
       if (!verified.paid) {
         return new Response(JSON.stringify({ ok: true, status: verified.status || 'pending' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      if (await holdForApproval(admin, order)) {
+        return new Response(JSON.stringify({ ok: true, status: order.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 

@@ -1,3 +1,4 @@
+import { holdForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Pakasir webhook: konfirmasi pembayaran QRIS dinamis, lalu kirim token via Fonnte.
@@ -255,13 +256,18 @@ Deno.serve(async (req) => {
   }
 
   if (!PAID_STATUSES.has(status)) {
-    await admin.from('orders').update({ status }).eq('id', order.id);
+    if (!['awaiting_approval', 'rejected', 'paid'].includes(String(order.status))) {
+      await admin.from('orders').update({ status }).eq('id', order.id);
+    }
     return new Response(JSON.stringify({ ok: true, ignored: true, status }), { headers: corsHeaders });
   }
 
   const verified = await verifyPakasirPaid(expectedKey, expectedSlug || project, orderId, Number(order.amount || 0));
   if (!verified.paid) {
     return new Response(JSON.stringify({ ok: true, ignored: true, status: verified.status, verified: false }), { headers: corsHeaders });
+  }
+  if (await holdForApproval(admin, order, 'Pakasir')) {
+    return new Response(JSON.stringify({ ok: true, awaiting_approval: true }), { headers: corsHeaders });
   }
 
   // Idempotent: skip only when paid and WA was actually sent.

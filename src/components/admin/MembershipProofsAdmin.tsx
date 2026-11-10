@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, Trash2, CheckCircle2, ExternalLink, Save, Phone, Send, Copy } from 'lucide-react';
+import { Loader2, RefreshCw, Trash2, CheckCircle2, ExternalLink, Save, Phone, Send, Copy, XCircle, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { adminWaNumber } from '@/lib/adminWa';
 import { toast } from '@/hooks/use-toast';
@@ -28,6 +29,58 @@ export default function MembershipProofsAdmin() {
   const [targets, setTargets] = useState<{ shows: Opt[]; replays: Opt[]; packages: Opt[] }>({ shows: [], replays: [], packages: [] });
   const [results, setResults] = useState<Record<string, string>>({});
   const [savingWa, setSavingWa] = useState(false);
+  const [approvalMode, setApprovalMode] = useState(false);
+  const [orderInfo, setOrderInfo] = useState<Record<string, { status: string; access_token: string | null; show_id: string | null; replay_id: string | null; kind: string; item_title: string; user_phone: string }>>({});
+
+  const loadApprovalMode = async () => {
+    const { data } = await supabase.from('site_settings').select('value').eq('key', 'require_admin_approval').maybeSingle();
+    setApprovalMode(String((data as any)?.value || '') === 'true');
+  };
+  const toggleApprovalMode = async (on: boolean) => {
+    setApprovalMode(on);
+    const { error } = await supabase.from('site_settings').upsert({ key: 'require_admin_approval', value: on ? 'true' : 'false' }, { onConflict: 'key' });
+    if (error) { setApprovalMode(!on); return toast({ title: 'Gagal menyimpan', description: error.message, variant: 'destructive' }); }
+    toast({ title: on ? 'Mode Persetujuan Admin aktif' : 'Mode Persetujuan Admin nonaktif' });
+  };
+  const loadOrders = async (list: Proof[]) => {
+    const ids = list.map((r) => r.show_order_id).filter(Boolean) as string[];
+    if (!ids.length) return;
+    const { data } = await supabase.from('orders').select('id,status,access_token,show_id,replay_id,kind,item_title,user_phone').in('id', ids);
+    const m: typeof orderInfo = {};
+    for (const o of (data || []) as any[]) m[o.id] = o;
+    setOrderInfo(m);
+  };
+  const orderAction = async (r: Proof, action: 'reject' | 'reset') => {
+    if (action === 'reject' && !confirm('Tolak pesanan ini?')) return;
+    setApproving((s) => ({ ...s, [r.id]: true }));
+    const { data, error } = await supabase.functions.invoke('admin-approve-proof', { body: { proof_id: r.id, action } });
+    setApproving((s) => ({ ...s, [r.id]: false }));
+    const res = data as any;
+    if (error || !res?.ok) return toast({ title: 'Gagal', description: error?.message || res?.error, variant: 'destructive' });
+    setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: action === 'reject' } : y)));
+    if (r.show_order_id) setOrderInfo((m) => ({ ...m, [r.show_order_id!]: { ...m[r.show_order_id!], status: res.status } }));
+    toast({ title: action === 'reject' ? 'Pesanan ditolak' : 'Status dikembalikan ke Pending' });
+  };
+  const copyTokenMessage = async (r: Proof) => {
+    let o = r.show_order_id ? orderInfo[r.show_order_id] : undefined;
+    if (r.show_order_id) {
+      const { data } = await supabase.from('orders').select('id,status,access_token,show_id,replay_id,kind,item_title,user_phone').eq('id', r.show_order_id).maybeSingle();
+      if (data) o = data as any;
+    }
+    const tok = o?.access_token || results[r.id];
+    if (!o || !tok) return toast({ title: 'Token belum ada', description: 'Setujui pesanan dulu agar token terbit.', variant: 'destructive' });
+    const origin = window.location.origin;
+    const link = o.kind === 'bundle' ? `${origin}/shows?bt=${tok}`
+      : o.show_id && !o.replay_id ? `${origin}/live?show=${o.show_id}&t=${tok}`
+      : `${origin}/akses?token=${tok}${o.replay_id ? `&replay=${o.replay_id}` : ''}`;
+    let pw = '';
+    if (o.replay_id) {
+      const { data: rp } = await (supabase as any).rpc('admin_get_replays');
+      pw = ((rp || []) as any[]).find((x) => x.id === o!.replay_id)?.password || '';
+    }
+    const msg = `📱 *Nomor Pembeli:* ${o.user_phone || r.phone || '-'}\n\n🎤 *${o.item_title || r.package_name}*\n\n🔗 *Link Akses:*\n${link}\n\n🎬 *Link Replay:* ${origin}${pw ? `\n🔐 Sandi Replay: *${pw}*` : ''}\n\n👤 Hanya untuk 1 perangkat pertama.\n\n— *ReplayTime* 💖`;
+    void copyText(msg, 'Link token + info replay');
+  };
 
   const load = async () => {
     setLoading(true);
@@ -36,9 +89,10 @@ export default function MembershipProofsAdmin() {
     if (error) { toast({ title: 'Gagal memuat', description: error.message, variant: 'destructive' }); return; }
     const list = (data || []) as Proof[];
     setRows(list);
+    void loadOrders(list);
     // Sign URLs
     const map: Record<string, string> = {};
-    await Promise.all(list.map(async (r) => {
+    await Promise.all(list.filter((r) => r.image_path).map(async (r) => {
       const { data: s } = await supabase.storage.from('membership-proofs').createSignedUrl(r.image_path, 60 * 30);
       if (s?.signedUrl) map[r.id] = s.signedUrl;
     }));
@@ -65,7 +119,7 @@ export default function MembershipProofsAdmin() {
     });
   };
 
-  useEffect(() => { void load(); void loadWa(); void loadTargets(); }, []);
+  useEffect(() => { void load(); void loadWa(); void loadTargets(); void loadApprovalMode(); }, []);
 
   const saveWa = async () => {
     setSavingWa(true);
@@ -130,6 +184,7 @@ export default function MembershipProofsAdmin() {
     const tokenVal = (res?.finalize as any)?.access_token || (res?.finalize as any)?.token || '';
     if (tokenVal) setResults((x) => ({ ...x, [r.id]: String(tokenVal) }));
     setRows((x) => x.map((y) => (y.id === r.id ? { ...y, handled: true } : y)));
+    if (r.show_order_id) setOrderInfo((m) => ({ ...m, [r.show_order_id!]: { ...m[r.show_order_id!], status: 'paid', access_token: tokenVal || m[r.show_order_id!]?.access_token || null } }));
     if (sent) {
       toast({ title: 'Disetujui & WA terkirim', description: `${res.order_kind === 'membership' ? 'Membership' : 'Show/Replay'} aktif — token dikirim ke ${r.phone}.` });
     } else if (res?.finalize?.error) {
@@ -155,6 +210,16 @@ export default function MembershipProofsAdmin() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-4 flex items-start justify-between gap-3">
+          <div>
+            <div className="font-semibold text-sm flex items-center gap-2"><ShieldCheck className="w-4 h-4" />Wajib Persetujuan Admin Setelah Bayar</div>
+            <p className="text-xs text-muted-foreground">Jika aktif, pembelian show/replay/bundle yang sudah lunas di QRIS berstatus Pending sampai Anda menekan Setujui di bawah. Berlaku untuk user login, guest, dan tanpa login.</p>
+          </div>
+          <Switch checked={approvalMode} onCheckedChange={toggleApprovalMode} />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle className="font-sans text-base sm:text-lg flex items-center gap-2"><Phone className="w-5 h-5" />Nomor WhatsApp Admin</CardTitle></CardHeader>
         <CardContent className="space-y-2">
@@ -208,6 +273,11 @@ export default function MembershipProofsAdmin() {
 
                     {r.order_id && <div className="font-mono text-[10px] truncate">Order Membership: {r.order_id}</div>}
                     {r.show_order_id && <div className="font-mono text-[10px] truncate">Order Show: {r.show_order_id}</div>}
+                    {r.show_order_id && orderInfo[r.show_order_id] && (
+                      <Badge variant={orderInfo[r.show_order_id].status === 'paid' ? 'default' : orderInfo[r.show_order_id].status === 'rejected' ? 'destructive' : 'secondary'}>
+                        {orderInfo[r.show_order_id].status === 'paid' ? 'Disetujui' : orderInfo[r.show_order_id].status === 'rejected' ? 'Ditolak' : orderInfo[r.show_order_id].status === 'awaiting_approval' ? 'Lunas — Menunggu Persetujuan' : orderInfo[r.show_order_id].status}
+                      </Badge>
+                    )}
                     {r.note && <div className="text-muted-foreground italic">"{r.note}"</div>}
                     <div className="text-muted-foreground">{new Date(r.created_at).toLocaleString('id-ID')}</div>
                     {results[r.id] && (
@@ -254,6 +324,21 @@ export default function MembershipProofsAdmin() {
                         <a href={urls[r.id]} target="_blank" rel="noreferrer">
                           <Button size="sm" variant="outline" className="h-7 text-[11px]"><ExternalLink className="w-3 h-3 mr-1" />Buka</Button>
                         </a>
+                      )}
+                      {r.show_order_id && orderInfo[r.show_order_id]?.status !== 'paid' && orderInfo[r.show_order_id]?.status !== 'rejected' && (
+                        <Button size="sm" variant="destructive" className="h-7 text-[11px]" disabled={!!approving[r.id]} onClick={() => orderAction(r, 'reject')}>
+                          <XCircle className="w-3 h-3 mr-1" />Tolak
+                        </Button>
+                      )}
+                      {r.show_order_id && orderInfo[r.show_order_id]?.status === 'rejected' && (
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" disabled={!!approving[r.id]} onClick={() => orderAction(r, 'reset')}>
+                          <RotateCcw className="w-3 h-3 mr-1" />Reset
+                        </Button>
+                      )}
+                      {r.show_order_id && (
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => copyTokenMessage(r)}>
+                          <Copy className="w-3 h-3 mr-1" />Salin Link Token + Info Replay
+                        </Button>
                       )}
                       <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setHandled(r, !r.handled)}>
                         <CheckCircle2 className="w-3 h-3 mr-1" />{r.handled ? 'Buka lagi' : 'Tandai selesai'}
