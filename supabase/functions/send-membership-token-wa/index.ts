@@ -1,3 +1,4 @@
+import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Admin-only: kirim WA link akses + info replay untuk membership_tokens
 // yang dibuat manual oleh admin (tidak terkait order pembayaran).
@@ -41,7 +42,8 @@ async function sendFonnteOnce(phone: string, message: string, timeoutMs: number)
   } catch (e) { return { ok: false, data: { error: String(e) } }; }
 }
 async function sendFonnte(phone: string, message: string) {
-  message = rewriteReplay(message);
+  const groupAdmin = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+  message = rewriteReplay(await enrichAccessMessage(groupAdmin, message));
   const attempts = [10000];
   let last: { ok: boolean; data: unknown } = { ok: false, data: { error: 'no_attempt' } };
   for (let i = 0; i < attempts.length; i++) {

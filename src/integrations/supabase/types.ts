@@ -47,6 +47,7 @@ export type Database = {
         Row: {
           created_at: string
           expires_at: string | null
+          group_link_override: string | null
           id: string
           kind: string
           label: string
@@ -63,6 +64,7 @@ export type Database = {
         Insert: {
           created_at?: string
           expires_at?: string | null
+          group_link_override?: string | null
           id?: string
           kind?: string
           label?: string
@@ -79,6 +81,7 @@ export type Database = {
         Update: {
           created_at?: string
           expires_at?: string | null
+          group_link_override?: string | null
           id?: string
           kind?: string
           label?: string
@@ -1324,6 +1327,7 @@ export type Database = {
           duration_days: number
           fixed_expires_at: string | null
           fixed_starts_at: string | null
+          group_link: string
           id: string
           includes_replays: boolean
           max_devices: number
@@ -1348,6 +1352,7 @@ export type Database = {
           duration_days?: number
           fixed_expires_at?: string | null
           fixed_starts_at?: string | null
+          group_link?: string
           id?: string
           includes_replays?: boolean
           max_devices?: number
@@ -1372,6 +1377,7 @@ export type Database = {
           duration_days?: number
           fixed_expires_at?: string | null
           fixed_starts_at?: string | null
+          group_link?: string
           id?: string
           includes_replays?: boolean
           max_devices?: number
@@ -1552,6 +1558,7 @@ export type Database = {
           created_by: string
           duration_days: number
           expires_at: string
+          group_link_override: string | null
           id: string
           includes_replays: boolean
           label: string
@@ -1574,6 +1581,7 @@ export type Database = {
           created_by?: string
           duration_days?: number
           expires_at: string
+          group_link_override?: string | null
           id?: string
           includes_replays?: boolean
           label?: string
@@ -1596,6 +1604,7 @@ export type Database = {
           created_by?: string
           duration_days?: number
           expires_at?: string
+          group_link_override?: string | null
           id?: string
           includes_replays?: boolean
           label?: string
@@ -2724,6 +2733,7 @@ export type Database = {
           duration_days: number
           fixed_expires_at: string | null
           fixed_starts_at: string | null
+          group_link: string
           id: string
           includes_replays: boolean
           max_devices: number

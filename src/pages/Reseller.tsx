@@ -12,8 +12,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { Copy, LogOut, RefreshCw, Search, Loader2, Radio, Film, Link2, Crown, Wallet, QrCode, KeyRound, Ban, ShieldOff, Trash2, Pencil, Check, RotateCcw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { getShowBundle, type ShowBundle } from '@/lib/bundle';
+
+type GroupChoice = { group_mode: 'admin' | 'custom' | 'none'; group_link: string };
 
 type Session = { phone: string; pin: string; label: string };
 type ShowRow = { id: string; title: string; show_date: string; show_time: string; image_url: string; category: string; is_live: boolean; is_active: boolean };
@@ -213,11 +216,12 @@ function TokenResultDialog({
 }
 
 function MembershipPanel({
-  session, onCreated, statsMap,
+  session, onCreated, statsMap, groupChoice,
 }: {
   session: Session;
   onCreated: (r: { link: string; message: string; title: string; extra: string; kind: 'membership'; targetId: string; targetTitle: string; regenerate: () => Promise<{ link: string; message: string; extra?: string } | null> }) => void;
   statsMap: Map<string, number>;
+  groupChoice: GroupChoice;
 }) {
   const [pkgs, setPkgs] = useState<PackageRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -242,7 +246,7 @@ function MembershipPanel({
   // Durasi selalu mengikuti pengaturan admin pada paket.
   const request = async (pkg: PackageRow) => {
     const { data, error } = await supabase.functions.invoke('reseller-create-membership', {
-      body: { phone: session.phone, pin: session.pin, package_id: pkg.id },
+      body: { phone: session.phone, pin: session.pin, package_id: pkg.id, ...groupChoice },
     });
     let d: any = data;
     if (error) {
@@ -635,6 +639,7 @@ function TokensPanel({ session }: { session: Session }) {
 }
 
 function Dashboard({ session, onLogout }: { session: Session; onLogout: () => void }) {
+  const [groupChoice, setGroupChoice] = useState<GroupChoice>({ group_mode: 'admin', group_link: '' });
   const [tab, setTab] = useState<'shows' | 'replays' | 'membership' | 'tokens' | 'billing'>('shows');
   const [shows, setShows] = useState<ShowRow[]>([]);
   const [replays, setReplays] = useState<ReplayRow[]>([]);
@@ -691,7 +696,7 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
 
   const requestToken = async (kind: 'show' | 'replay' | 'bundle', id: string) => {
     const { data, error } = await supabase.functions.invoke('reseller-create-token', {
-      body: { phone: session.phone, pin: session.pin, kind, target_id: id },
+      body: { phone: session.phone, pin: session.pin, kind, target_id: id, ...groupChoice },
     });
     let d: any = data;
     if (error) {
@@ -778,6 +783,18 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-4 pb-24">
+        <div className="space-y-2 border-b border-border pb-4 mb-4">
+          <Label>Grup untuk Link Show & Membership</Label>
+          <Select value={groupChoice.group_mode} onValueChange={(value: GroupChoice['group_mode']) => setGroupChoice((prev) => ({ ...prev, group_mode: value }))}>
+            <SelectTrigger aria-label="Pilihan grup reseller"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Gunakan Grup Admin</SelectItem>
+              <SelectItem value="custom">Gunakan Grup Saya</SelectItem>
+              <SelectItem value="none">Tanpa Grup</SelectItem>
+            </SelectContent>
+          </Select>
+          {groupChoice.group_mode === 'custom' && <Input aria-label="Link grup reseller" type="url" placeholder="https://chat.whatsapp.com/..." value={groupChoice.group_link} onChange={(e) => setGroupChoice((prev) => ({ ...prev, group_link: e.target.value }))} />}
+        </div>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="shows" className="text-xs"><Radio className="w-4 h-4 mr-1" />Show</TabsTrigger>
@@ -885,6 +902,7 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
             <MembershipPanel
               session={session}
               statsMap={statsMap}
+              groupChoice={groupChoice}
               onCreated={async (r) => {
                 await bumpStats(r.kind, r.targetId, r.targetTitle);
                 setResult(r);

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { saveMembershipCredentials } from '@/lib/membershipAccess';
 import { useActiveMembership } from '@/hooks/useActiveMembership';
 import MembershipDashboard from '@/components/MembershipDashboard';
+import AccessInfoCard from '@/components/AccessInfoCard';
 import MembershipProofUpload from '@/components/MembershipProofUpload';
 
 interface Pkg {
@@ -428,6 +429,7 @@ export default function Membership() {
                   </Button>
                 </div>
               )}
+              {successToken && <AccessInfoCard mtoken={successToken} mpassword={successPassword} fallbackLink={successLink} compact />}
               <Button className="w-full" onClick={() => { setPayOpen(false); refreshMembership(); navigate(successToken ? `/live?mtoken=${encodeURIComponent(successToken)}&mp=${encodeURIComponent(successPassword)}` : '/live'); }}>Tonton Live</Button>
               <Button variant="outline" className="w-full" onClick={() => { setPayOpen(false); refreshMembership(); navigate('/'); }}>Tonton Replay</Button>
             </div>
@@ -461,6 +463,7 @@ export default function Membership() {
                 </Button>
               </div>
             </div>
+            {successToken && <AccessInfoCard mtoken={successToken} mpassword={successPassword} fallbackLink={successLink} compact />}
             <Button className="w-full" onClick={() => { setSuccessOpen(false); refreshMembership(); navigate('/live'); }}>Tonton Live</Button>
             <Button variant="outline" className="w-full" onClick={() => { setSuccessOpen(false); refreshMembership(); navigate('/'); }}>Tonton Replay</Button>
           </div>

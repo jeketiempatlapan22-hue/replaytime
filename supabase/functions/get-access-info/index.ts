@@ -1,3 +1,4 @@
+import { resolveGroupLink, membershipGroupLink, appendGroupLink } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { membershipPasswordOk, currentMembershipPassword } from "../_shared/membership-password.ts";
@@ -13,7 +14,7 @@ const _json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 function buildMessage(o: {
-  title: string; date: string; link: string; password: string; replayInfo: string; kindLabel: string; replayLink?: string;
+  title: string; date: string; link: string; password: string; replayInfo: string; kindLabel: string; replayLink?: string; groupLink?: string;
 }) {
   const lines: string[] = [
     "🎬 *RealTime48*",
@@ -54,7 +55,7 @@ Deno.serve(async (req) => {
     if (mtoken) {
       const { data: t } = await admin
         .from("membership_tokens")
-        .select("id,token,password,password_rotating,label,expires_at,revoked,replay_info,includes_replays")
+        .select("id,token,password,password_rotating,label,expires_at,revoked,replay_info,includes_replays,package_id,group_link_override")
         .eq("token", mtoken).maybeSingle();
       if (!t || t.revoked) return json({ ok: false, reason: "invalid" });
       if (t.password && mpassword && !(await membershipPasswordOk(admin, t, mpassword))) return json({ ok: false, reason: "invalid" });
@@ -65,6 +66,7 @@ Deno.serve(async (req) => {
         : "";
       const password = curPw;
       const replayInfo = String(t.replay_info || "");
+      const groupLink = await membershipGroupLink(admin, t);
       return json({
         ok: true,
         title: t.label || "Membership",
@@ -72,7 +74,8 @@ Deno.serve(async (req) => {
         link,
         password,
         replay_info: replayInfo,
-        message: buildMessage({ title: t.label || "Membership", date, link, password, replayInfo, kindLabel: "Link Membership", replayLink: t.includes_replays ? origin : undefined }),
+        group_link: groupLink,
+        message: buildMessage({ title: t.label || "Membership", date, link, password, replayInfo, kindLabel: "Link Membership", groupLink, replayLink: t.includes_replays ? origin : undefined }),
       });
     }
 
@@ -190,6 +193,8 @@ Deno.serve(async (req) => {
       .from("active_shows")
       .select("title,show_date,show_time,live_password,replay_info,replay_id,group_link,group_link_enabled")
       .eq("id", okShowId).maybeSingle();
+    const { data: groupToken } = await admin.from('active_show_tokens').select('group_link_override').eq('token', token).maybeSingle();
+    const groupLink = resolveGroupLink(show?.group_link_enabled ? show.group_link : '', groupToken?.group_link_override);
     const title = String(show?.title || order?.item_title || "Show");
     const d = show?.show_date ? String(show.show_date) : "";
     const t = String(show?.show_time || "").slice(0, 5);
@@ -216,8 +221,8 @@ Deno.serve(async (req) => {
       replay_link: replayLink,
       password,
       replay_info: replayInfo,
-      group_link: show?.group_link_enabled ? String(show?.group_link || "") : "",
-      message: buildMessage({ title, date, link, password, replayInfo, kindLabel: "Link Akses", replayLink: origin }),
+      group_link: groupLink,
+      message: buildMessage({ title, date, link, password, replayInfo, kindLabel: "Link Akses", groupLink, replayLink: origin }),
     });
   } catch (e) {
     return json({ ok: false, reason: "error", error: String((e as Error)?.message || e) }, 200);

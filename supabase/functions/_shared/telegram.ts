@@ -1,3 +1,4 @@
+import { enrichAccessMessage } from './group-link.ts';
 import { rewriteReplay } from './replay-origin.ts';
 // Helper Telegram bersama: kirim pesan lewat connector gateway Lovable.
 // Dipakai oleh telegram-webhook, poll-pending-orders, dan pakasir-webhook.
@@ -152,6 +153,7 @@ export async function sendTelegramByPhone(
 ): Promise<boolean> {
   try {
     if (!telegramConfigured()) return false;
+    message = await enrichAccessMessage(admin, message);
     const raw = String(phone || '').trim();
     // Pembeli Telegram murni memakai identitas semu `tg<chat_id>`:
     // chat_id-nya sudah ada di string, jangan dinormalisasi jadi nomor telepon.

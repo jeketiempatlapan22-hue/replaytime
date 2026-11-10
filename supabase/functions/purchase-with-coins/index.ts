@@ -1,3 +1,4 @@
+import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 // Spend coins to purchase a show or replay. Authenticated only. Atomic debit + token issuance + WhatsApp delivery.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -32,7 +33,8 @@ async function sendFonnteOnce(phone: string, message: string) {
   } catch (e) { return { ok: false, data: { error: String(e) } }; }
 }
 async function sendFonnte(phone: string, message: string) {
-  message = rewriteReplay(message);
+  const groupAdmin = createClient(Deno.env.get('SUPABASE_URL') || '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+  message = rewriteReplay(await enrichAccessMessage(groupAdmin, message));
   // Jangan tahan transaksi koin terlalu lama; token tetap dikembalikan di website,
   // WA gagal bisa dikirim ulang dari admin/poller.
   const delays = [0];

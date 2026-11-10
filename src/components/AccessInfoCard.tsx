@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Copy, KeyRound, Loader2, AlertTriangle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/lib/clipboard';
+import JoinGroupButton from '@/components/JoinGroupButton';
 import { Textarea } from '@/components/ui/textarea';
 
 export interface AccessInfo {
@@ -67,6 +68,15 @@ export default function AccessInfoCard({ token, showId, replayId, mtoken, mpassw
     }
   };
 
+  useEffect(() => {
+    let active = true;
+    setInfo(null); setOpen(false);
+    void supabase.functions.invoke('get-access-info', {
+      body: { token, show_id: showId, replay_id: replayId, mtoken, mpassword },
+    }).then(({ data }) => { if (active && data?.ok) setInfo(data as AccessInfo); });
+    return () => { active = false; };
+  }, [token, showId, replayId, mtoken, mpassword]);
+
   const copyFull = async () => {
     const d = info || (await load());
     if (!d) return;
@@ -95,6 +105,8 @@ export default function AccessInfoCard({ token, showId, replayId, mtoken, mpassw
           <KeyRound className="w-3 h-3" /> Salin Link + Sandi
         </Button>
       </div>
+
+      <JoinGroupButton link={info?.group_link} />
 
       {!open ? (
         <Button

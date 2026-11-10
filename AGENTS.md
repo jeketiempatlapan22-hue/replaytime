@@ -1,5 +1,7 @@
 # Project Architecture Rules
 
+- Resolve buyer groups through the shared group-link helper: tokens inherit show/package groups unless their nullable override replaces or explicitly removes one, so reseller groups never alter other buyers.
+
 - Store the special-show member in active_shows.featured_member and retrieve it through the existing public column allowlist, so card metadata never requires exposing stream credentials.
 - Use the shared clipboard helper for access-link tools and keep complete text selectable when copying is unavailable, so browser permission failures cannot silently lose tokens.
 

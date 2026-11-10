@@ -23,6 +23,7 @@ interface MembershipToken {
   includes_replays: boolean;
   max_devices: number;
   replay_info: string;
+  group_link_override?: string | null;
   created_at: string;
 }
 
@@ -51,7 +52,7 @@ export default function MembershipAdmin() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sendingId, setSendingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ label: '', phone: '', duration_days: 30, includes_replays: true, max_devices: 1, replay_info: '' });
+  const [form, setForm] = useState({ label: '', phone: '', duration_days: 30, includes_replays: true, max_devices: 1, replay_info: '', group_link: '' });
   const [creating, setCreating] = useState(false);
 
   const load = async () => {
@@ -94,12 +95,13 @@ export default function MembershipAdmin() {
       includes_replays: form.includes_replays,
       max_devices: Math.max(1, Math.min(10000, Number(form.max_devices) || 1)),
       replay_info: form.replay_info,
+      group_link_override: form.group_link.trim() || null,
       created_by: 'admin',
     });
     setCreating(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Membership baru dibuat');
-    setForm({ label: '', phone: '', duration_days: 30, includes_replays: true, max_devices: 1, replay_info: '' });
+    setForm({ label: '', phone: '', duration_days: 30, includes_replays: true, max_devices: 1, replay_info: '', group_link: '' });
     void load();
   };
 
@@ -151,6 +153,13 @@ export default function MembershipAdmin() {
     toast.success(`Max device diubah ke ${n}`);
     void load();
   };
+  const editGroup = async (r: MembershipToken) => {
+    const value = prompt('Link grup membership (kosongkan untuk menghapus)', r.group_link_override || '');
+    if (value === null) return;
+    const { error } = await supabase.from('membership_tokens').update({ group_link_override: value.trim() }).eq('id', r.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Grup membership diperbarui'); void load();
+  };
   const copyLink = (r: MembershipToken) => {
     const link = `${window.location.origin}/live?mtoken=${encodeURIComponent(r.token)}&mp=${encodeURIComponent(r.password)}`;
     navigator.clipboard.writeText(link);
@@ -176,6 +185,7 @@ export default function MembershipAdmin() {
             <Label className="text-xs">Info Replay (opsional)</Label>
             <Textarea rows={2} value={form.replay_info} onChange={e => setForm({ ...form, replay_info: e.target.value })} placeholder="cth: 5 replay terbaru bulan ini" />
           </div>
+          <div className="sm:col-span-2"><Label htmlFor="manual-membership-group" className="text-xs">Link Grup Membership</Label><Input id="manual-membership-group" type="url" value={form.group_link} onChange={e => setForm({ ...form, group_link: e.target.value })} placeholder="https://chat.whatsapp.com/..." /></div>
           <div className="flex items-end gap-2">
             <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={form.includes_replays} onChange={e => setForm({ ...form, includes_replays: e.target.checked })} /> Termasuk replay</label>
           </div>
@@ -235,6 +245,7 @@ export default function MembershipAdmin() {
                           {sendingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Send className="w-3.5 h-3.5 mr-1" />}
                           Kirim WA
                         </Button>
+                        <Button size="sm" variant="outline" onClick={() => editGroup(r)}>Grup</Button>
                         <Button size="sm" variant="outline" onClick={() => copyLink(r)} title="Salin link"><Copy className="w-3.5 h-3.5 mr-1" />Link</Button>
                         <Button size="sm" variant="outline" onClick={() => editMaxDevices(r)} title="Ubah max device">Max: {r.max_devices ?? 1}</Button>
                         <Button size="sm" variant="outline" onClick={() => resetDevices(r.id)} title="Cabut semua perangkat tertaut"><RefreshCw className="w-3.5 h-3.5 mr-1" />Reset Device</Button>

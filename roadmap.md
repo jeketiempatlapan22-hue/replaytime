@@ -1,5 +1,12 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
+## Grup pembeli show dan membership
+- [x] Simpan grup membership dan pilihan grup reseller per token.
+- [x] Tombol gabung grup setelah pembayaran dan di informasi akses Profil.
+- [x] Sertakan grup pada pesan admin/reseller dan pengiriman pembelian.
+- [x] Uji aturan grup dan periksa halaman publik tanpa error.
+- [ ] Uji pembayaran dan Profil dengan akun aktif — menunggu user masuk di preview; sesi akun tidak tersedia.
+
 - [x] Migrasi 1: tambah nilai 'moderator' ke enum app_role
 - [x] Migrasi 2: kolom live_messages.sender_role + user_id, tabel live_message_senders (privat), fungsi admin_bulk_reset_devices, admin_get_chat_sender, admin_set_moderator, admin_list_moderators, mod_delete_message, mod_block_chat, mod_unblock_chat
 - [x] Edge function live-chat-send (kirim pesan lewat server, catat pengirim privat, tolak browser diblokir)

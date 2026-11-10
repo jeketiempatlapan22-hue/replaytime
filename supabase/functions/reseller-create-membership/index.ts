@@ -1,3 +1,4 @@
+import { resolveGroupLink, appendGroupLink } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 import { genShortPassword } from '../_shared/membership-password.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -71,7 +72,7 @@ Deno.serve(async (req) => {
     pkg.replay_info = String(ri?.value || '');
   } else {
     const { data } = await admin.from('membership_packages')
-      .select('id,name,status,paused,max_devices,includes_replays,replay_info,duration_days,fixed_starts_at,fixed_expires_at').eq('id', packageId).maybeSingle();
+      .select('id,name,status,paused,max_devices,includes_replays,replay_info,group_link,duration_days,fixed_starts_at,fixed_expires_at').eq('id', packageId).maybeSingle();
     pkg = data;
   }
   if (!pkg) return json({ error: 'package_not_found' }, 404);
@@ -92,6 +93,10 @@ Deno.serve(async (req) => {
   // Info replay reseller = info replay paket yang diatur admin (disatukan).
   const replayInfo = String(pkg.replay_info || '');
 
+  const groupOverride = body.group_mode === 'none' ? '' : body.group_mode === 'custom' ? resolveGroupLink(body.group_link) : null;
+  if (body.group_mode === 'custom' && !groupOverride) return json({ error: 'invalid_group_link' }, 400);
+  const groupLink = resolveGroupLink(pkg.group_link, groupOverride);
+
   const token = await freshToken(admin, 12);
   const password = genShortPassword();
   // Periode dihitung dari waktu pembuatan token reseller (31/62 hari).
@@ -111,6 +116,7 @@ Deno.serve(async (req) => {
     max_devices: pkg.max_devices || 1,
     includes_replays: pkg.includes_replays !== false,
     replay_info: replayInfo,
+    group_link_override: groupOverride,
     package_id: pkg.id,
     created_by: `reseller:${phone}`,
     password_rotating: false,
@@ -123,7 +129,7 @@ Deno.serve(async (req) => {
   const expStr = expiresAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const siteOnly = origin.replace(/^https?:\/\//, '');
   const message = ['👑 *MEMBERSHIP AKTIF*', '', `📦 *${pkg.name}*`, `📅 Berlaku hingga: ${expStr}`, '',
-    '🔗 *Link Akses:*', link, '', '🎬 *Link Replay:* ' + siteOnly, '', `🔐 Sandi: *${password}*`, '', '— *ReplayTime* 💖'].join('\n');
+    '🔗 *Link Akses:*', link, '', '🎬 *Link Replay:* ' + siteOnly, '', `🔐 Sandi: *${password}*`, ...(groupLink ? ['', '👥 *Gabung Grup:*', groupLink] : []), '', '— *ReplayTime* 💖'].join('\n');
 
   await admin.from('token_deliveries').insert({
     phone, replay_id: null, replay_title: `Membership • ${pkg.name}`,

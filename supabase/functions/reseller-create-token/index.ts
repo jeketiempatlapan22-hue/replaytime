@@ -1,3 +1,4 @@
+import { resolveGroupLink, appendGroupLink } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createBundleLink } from '../_shared/bundle.ts';
@@ -116,15 +117,19 @@ Deno.serve(async (req) => {
 
   // kind === 'show'
   const { data: s } = await admin.from('active_shows')
-    .select('id,title,show_date,show_time,live_password,replay_info,replay_id').eq('id', targetId).maybeSingle();
+    .select('id,title,show_date,show_time,live_password,replay_info,replay_id,group_link,group_link_enabled').eq('id', targetId).maybeSingle();
   if (!s) return json({ error: 'show_not_found' }, 404);
+
+  const groupOverride = body.group_mode === 'none' ? '' : body.group_mode === 'custom' ? resolveGroupLink(body.group_link) : null;
+  if (body.group_mode === 'custom' && !groupOverride) return json({ error: 'invalid_group_link' }, 400);
+  const groupLink = resolveGroupLink(s.group_link_enabled ? s.group_link : '', groupOverride);
 
   // expires_at = jadwal show + 8 jam (akhir window auto-schedule live, WIB +07:00)
   const showStart = new Date(`${s.show_date}T${String(s.show_time).slice(0, 8)}+07:00`);
   const expiresAt = new Date(showStart.getTime() + 24 * 60 * 60 * 1000);
 
   const { error } = await admin.from('active_show_tokens').insert({
-    show_id: s.id, token, kind: 'personal', max_devices: 1, label, expires_at: expiresAt.toISOString(),
+    show_id: s.id, token, group_link_override: groupOverride, kind: 'personal', max_devices: 1, label, expires_at: expiresAt.toISOString(),
   });
   if (error) return json({ error: 'create_failed', detail: error.message }, 500);
 
@@ -135,7 +140,7 @@ Deno.serve(async (req) => {
     replayPassword = String(rp?.password || '');
   }
   const message = ['🔐 *TOKEN LIVE*', '', `🎤 *${s.title}*`, `📅 ${s.show_date} ${String(s.show_time).slice(0, 5)}`, `⏳ Berlaku sampai: *${fmtId(expiresAt)}*`, '',
-    '🔗 *Link Live:*', link, '', '🎬 *Link Replay:*', siteOnly, ...(replayPassword ? ['', `🔐 Sandi Replay: *${replayPassword}*`] : []), ...(s.replay_info ? ['', '🎞️ *Info Replay*', s.replay_info] : []), '', '— *ReplayTime* 💖'].join('\n');
+    '🔗 *Link Live:*', link, '', '🎬 *Link Replay:*', siteOnly, ...(replayPassword ? ['', `🔐 Sandi Replay: *${replayPassword}*`] : []), ...(groupLink ? ['', '👥 *Gabung Grup:*', groupLink] : []), ...(s.replay_info ? ['', '🎞️ *Info Replay*', s.replay_info] : []), '', '— *ReplayTime* 💖'].join('\n');
 
   await admin.from('token_deliveries').insert({
     phone, replay_id: null, replay_title: s.title, access_token: token, link,

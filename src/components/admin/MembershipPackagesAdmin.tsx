@@ -17,6 +17,7 @@ interface Pkg {
   name: string;
   description: string;
   replay_info: string;
+  group_link?: string;
   duration_days: number;
   price_idr: number;
   price_coins: number;
@@ -41,6 +42,7 @@ const emptyForm = {
   name: '',
   description: '',
   replay_info: '',
+  group_link: '',
   duration_days: 30,
   price_idr: 0,
   price_coins: 0,
@@ -119,6 +121,7 @@ export default function MembershipPackagesAdmin() {
       name: form.name.trim(),
       description: form.description,
       replay_info: form.replay_info,
+      group_link: form.group_link.trim(),
       duration_days: Number(form.duration_days),
       price_idr: Number(form.price_idr) || 0,
       price_coins: Number(form.price_coins) || 0,
@@ -171,6 +174,7 @@ export default function MembershipPackagesAdmin() {
       name: p.name,
       description: p.description,
       replay_info: p.replay_info,
+      group_link: p.group_link || '',
       duration_days: p.duration_days,
       price_idr: p.price_idr,
       price_coins: p.price_coins,
@@ -349,6 +353,10 @@ export default function MembershipPackagesAdmin() {
               placeholder={'Daftar replay yang bisa diakses dengan membership:\n• Show A (12/05)\n• Show B (18/05)\n• Show C (24/05)'}
             />
             <p className="text-[10px] text-muted-foreground mt-1">Tidak akan terlihat di kartu publik. Hanya dikirim via WhatsApp setelah user berhasil membeli.</p>
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="membership-group" className="text-xs">Link Grup Membership</Label>
+            <Input id="membership-group" type="url" value={form.group_link} onChange={(e) => setForm({ ...form, group_link: e.target.value })} placeholder="https://chat.whatsapp.com/..." />
           </div>
           <div className="sm:col-span-2 flex gap-2">
             <Button onClick={save} disabled={saving} className="flex-1 sm:flex-none">
