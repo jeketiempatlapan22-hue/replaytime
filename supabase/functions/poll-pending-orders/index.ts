@@ -1,3 +1,4 @@
+import { queuePaidSweep } from '../_shared/telegram-admin.ts';
 import { holdForApproval, holdMembershipForApproval } from '../_shared/approval-gate.ts';
 import { enrichAccessMessage } from '../_shared/group-link.ts';
 import { primeReplayHost, rewriteReplay } from '../_shared/replay-origin.ts';
@@ -345,6 +346,7 @@ async function processOrder(admin: ReturnType<typeof createClient>, order: any, 
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'OPTIONS') queuePaidSweep();
   await primeReplayHost();
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 

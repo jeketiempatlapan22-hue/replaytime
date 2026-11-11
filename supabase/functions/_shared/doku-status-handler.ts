@@ -1,3 +1,4 @@
+import { queuePaidSweep } from './telegram-admin.ts';
 import { holdForApproval, holdMembershipForApproval } from './approval-gate.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { primeReplayHost, rewriteReplay } from './replay-origin.ts';
@@ -159,6 +160,7 @@ async function memCreds(admin: any, orderId: string) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method !== 'OPTIONS') queuePaidSweep();
   await primeReplayHost();
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 

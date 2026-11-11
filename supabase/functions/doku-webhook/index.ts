@@ -1,3 +1,4 @@
+import { queuePaidSweep } from '../_shared/telegram-admin.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
@@ -6,6 +7,7 @@ import { dokuConfiguration, validateDokuNotification, verifyDokuPaidStrict } fro
 const schema = z.object({ originalPartnerReferenceNo: z.string().regex(/^dk[a-zA-Z0-9_-]{1,62}$/), originalReferenceNo: z.string().min(1).max(64) }).passthrough();
 const respond = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 Deno.serve(async req => {
+  if (req.method !== 'OPTIONS') queuePaidSweep();
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return respond(405, { error: 'method_not_allowed' });
   if (!dokuConfiguration().configured) return respond(503, { error: 'doku_not_configured' });

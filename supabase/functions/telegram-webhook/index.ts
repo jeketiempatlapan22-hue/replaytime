@@ -18,6 +18,8 @@ import {
   deriveTelegramWebhookSecret, safeEqual, type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
+import { handleAdminText, handleAdminCallback } from './admin-commands.ts';
+
 type Admin = ReturnType<typeof createClient>;
 
 const SITE = 'https://realtime48show.my.id';
@@ -373,6 +375,7 @@ Deno.serve(async (req) => {
       const data = String(cq.data || '');
       await answerCallbackQuery(cq.id, 'Diproses…');
       if (!chatId) return respond();
+      if (await handleAdminCallback(admin, cq)) return respond();
       if (data === 'menu:show') { await listShows(admin, chatId); return respond(); }
       if (data === 'menu:replay') { await listReplays(admin, chatId); return respond(); }
       if (data.startsWith('c:')) {
@@ -420,6 +423,8 @@ Deno.serve(async (req) => {
     const text: string = String(message?.text ?? '').trim();
     if (!text) return respond();
     const cmd = text.split(/\s+/)[0].toLowerCase().replace(/@.*$/, '');
+
+    if (await handleAdminText(admin, chatId, text, cmd)) return respond();
 
     if (cmd === '/start') {
       const code = text.split(/\s+/)[1]?.trim().toUpperCase() || '';

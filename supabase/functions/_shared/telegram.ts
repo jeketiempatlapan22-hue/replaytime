@@ -239,3 +239,15 @@ export async function sendTelegramPhotoBytes(
     return { ok: false, data: { error: String(e) } };
   }
 }
+
+/** Ubah teks pesan (dipakai untuk menandai notifikasi admin yang sudah diproses). */
+export async function editTelegramMessage(chatId: number | string, messageId: number, text: string, keyboard?: InlineKeyboard) {
+  const payload: Record<string, unknown> = { chat_id: chatId, message_id: messageId, text, disable_web_page_preview: true };
+  payload.reply_markup = { inline_keyboard: keyboard ?? [] };
+  return await gatewayCall('editMessageText', payload);
+}
+
+/** Ubah caption pesan foto. */
+export async function editTelegramCaption(chatId: number | string, messageId: number, caption: string, keyboard?: InlineKeyboard) {
+  return await gatewayCall('editMessageCaption', { chat_id: chatId, message_id: messageId, caption, reply_markup: { inline_keyboard: keyboard ?? [] } });
+}

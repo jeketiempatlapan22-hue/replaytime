@@ -1267,6 +1267,7 @@ export type Database = {
           phone: string
           reserved_until: string
           status: string
+          telegram_notified_at: string | null
           updated_at: string
           user_id: string | null
           wa_attempts: number
@@ -1289,6 +1290,7 @@ export type Database = {
           phone: string
           reserved_until?: string
           status?: string
+          telegram_notified_at?: string | null
           updated_at?: string
           user_id?: string | null
           wa_attempts?: number
@@ -1311,6 +1313,7 @@ export type Database = {
           phone?: string
           reserved_until?: string
           status?: string
+          telegram_notified_at?: string | null
           updated_at?: string
           user_id?: string | null
           wa_attempts?: number
@@ -1413,6 +1416,7 @@ export type Database = {
           phone: string
           review_status: string
           show_order_id: string | null
+          telegram_notified_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -1429,6 +1433,7 @@ export type Database = {
           phone?: string
           review_status?: string
           show_order_id?: string | null
+          telegram_notified_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1445,6 +1450,7 @@ export type Database = {
           phone?: string
           review_status?: string
           show_order_id?: string | null
+          telegram_notified_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1674,6 +1680,7 @@ export type Database = {
           replay_id: string | null
           show_id: string | null
           status: string
+          telegram_notified_at: string | null
           token_sent_at: string | null
           updated_at: string
           user_id: string | null
@@ -1696,6 +1703,7 @@ export type Database = {
           replay_id?: string | null
           show_id?: string | null
           status?: string
+          telegram_notified_at?: string | null
           token_sent_at?: string | null
           updated_at?: string
           user_id?: string | null
@@ -1718,6 +1726,7 @@ export type Database = {
           replay_id?: string | null
           show_id?: string | null
           status?: string
+          telegram_notified_at?: string | null
           token_sent_at?: string | null
           updated_at?: string
           user_id?: string | null
@@ -2303,6 +2312,48 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      telegram_admin_link_codes: {
+        Row: {
+          code: string
+          expires_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          expires_at: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      telegram_admins: {
+        Row: {
+          chat_id: number
+          created_at: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          label?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          label?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2930,6 +2981,7 @@ export type Database = {
           phone: string
           review_status: string
           show_order_id: string | null
+          telegram_notified_at: string | null
           user_id: string | null
         }[]
         SetofOptions: {

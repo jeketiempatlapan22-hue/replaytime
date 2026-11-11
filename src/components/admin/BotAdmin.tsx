@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import TelegramAdminLink from './TelegramAdminLink';
 import { Plus, Save, Trash2, Send, Copy, Check, Bot, Eye, EyeOff, KeyRound } from 'lucide-react';
 
 type BotCommand = {
@@ -173,6 +174,7 @@ export default function BotAdmin() {
 
   return (
     <div className="space-y-6">
+      <TelegramAdminLink />
       {/* Webhook URLs */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         <h3 className="font-semibold">Webhook URL</h3>

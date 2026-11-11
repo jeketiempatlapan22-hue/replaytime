@@ -60,3 +60,6 @@ verify_jwt = false
 
 [functions.tv-stream]
 verify_jwt = false
+
+[functions.proof-submitted-notify]
+verify_jwt = false

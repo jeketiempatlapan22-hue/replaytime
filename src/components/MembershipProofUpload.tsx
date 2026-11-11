@@ -73,7 +73,9 @@ export default function MembershipProofUpload({ open, onOpenChange, orderId, sho
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth?.user?.id || null;
 
+      const proofId = crypto.randomUUID();
       const { error: insErr } = await supabase.from('membership_payment_proofs').insert({
+        id: proofId,
         order_id: orderId || null,
         show_order_id: showOrderId || null,
         user_id: userId,
@@ -85,6 +87,8 @@ export default function MembershipProofUpload({ open, onOpenChange, orderId, sho
         note: note.trim(),
       } as never);
       if (insErr) throw insErr;
+      // Notifikasi Telegram admin (tidak menghalangi alur user bila gagal).
+      supabase.functions.invoke('proof-submitted-notify', { body: { proof_id: proofId } }).catch(() => {});
 
       toast.success('Bukti terkirim. Diarahkan ke WhatsApp admin…');
       const target = adminWaNumber(adminWa);

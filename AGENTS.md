@@ -33,3 +33,5 @@
 - Build proof-copy messages server-side through _shared/proof-message.ts and refresh the admin proof list every five seconds, so passwords stay admin-only and cross-site decisions display without manual refresh.
 - Share exact trimmed case-insensitive password comparison and WIB month selection in the server-only password-rules helper, so live/replay do not diverge or treat SQL wildcards as passwords.
 - Keep admin-monitor and embedded pages on their current origin without bypassing server authentication, so monitor chat retains the signed-in admin session.
+- Telegram admin commands/buttons live in telegram-webhook/admin-commands.ts, are never listed in bot menus, and re-check isTelegramAdmin (telegram_admins + current admin role) on every call; proof decisions and link creation reuse _shared/proof-actions.ts and _shared/admin-link.ts, so Telegram and the admin panel produce identical results.
+- Admin payment notifications are claimed once via telegram_notified_at and swept by queuePaidSweep from every payment entrypoint, so Pakasir/DOKU paths never double-notify.
