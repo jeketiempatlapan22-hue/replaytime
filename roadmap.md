@@ -4,9 +4,10 @@
 - [x] Perbaiki DELETE reset massal, konsumsi token show, dan hitungan reseller; fungsi reset/purge lain sudah memiliki WHERE.
 - [x] Samakan pencocokan sandi live/replay dan bulan WIB; sertakan show_id pada semua respons per-show; pertahankan batas akses dan retensi sandi yang ada tanpa memperpanjang token.
 - [x] Pertahankan monitor admin di domain asal dan deploy unlock-live, verify-password, live-chat-send atomik terbaru.
-- [x] Uji aturan dan halaman admin/kunci tanpa kesalahan runtime.
+- [x] 25 tes aturan lulus; halaman admin/kunci tanpa kesalahan runtime; database mengonfirmasi WHERE aman dan reset konsumsi token.
 - [ ] Uji reset semua kategori, sandi nyata, dan badge monitor dengan admin — akun peminta belum mempunyai sesi; perlu masuk melalui preview, reset massal akan melepas perangkat penonton.
-- [ ] Publish Website A setelah pemeriksaan; Website B membutuhkan akses proyek terpisah.
+- [x] Publikasi Website A diminta untuk https://realtimestream.my.id; penyelesaian publikasi belum diverifikasi.
+- [ ] Publish dan uji Website B — membutuhkan akses proyek terpisah; aturan server bersama sudah diperbarui.
 
 ## Token sebelum persetujuan dan sinkronisasi dua website
 - [x] Terbitkan token saat gateway terkonfirmasi atau bukti terhubung diunggah; pencabutan saat ditolak dan pemulihan saat reset.
