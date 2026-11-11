@@ -1,5 +1,12 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
+## Perintah Website A v3
+- [ ] Perbaiki DELETE reset massal, konsumsi token show, dan hitungan reseller; periksa reset/purge lain.
+- [ ] Samakan pencocokan sandi live/replay dan bulan WIB; sertakan show_id pada semua respons per-show.
+- [ ] Pertahankan monitor admin di domain asal dan deploy chat atomik terbaru.
+- [ ] Uji aturan dan verifikasi halaman; uji admin membutuhkan sesi akun peminta.
+- [ ] Publish Website A setelah pemeriksaan; Website B membutuhkan akses proyek terpisah.
+
 ## Token sebelum persetujuan dan sinkronisasi dua website
 - [x] Terbitkan token saat gateway terkonfirmasi atau bukti terhubung diunggah; pencabutan saat ditolak dan pemulihan saat reset.
 - [x] Perbaiki pesan salin sandi show/bundle/custom dan sediakan teks lengkap jika clipboard gagal.

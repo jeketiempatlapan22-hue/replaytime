@@ -31,3 +31,5 @@
 - Use DOKU SNAP through the shared server-only adapter for all QR creation and strict status verification; retain legacy invoice columns for compatibility, query stored references (never create during verification), and reject sandbox fulfillment so old orders and test charges cannot grant new access.
 - Keep review status separate from credential provisioning: service_provision_review_token locks each order and issues reusable credentials after proof upload or gateway confirmation, while admin approval controls buyer buttons and rejection/reset revokes/restores the same tokens across shared-backend sites.
 - Build proof-copy messages server-side through _shared/proof-message.ts and refresh the admin proof list every five seconds, so passwords stay admin-only and cross-site decisions display without manual refresh.
+- Share exact trimmed case-insensitive password comparison and WIB month selection in the server-only password-rules helper, so live/replay do not diverge or treat SQL wildcards as passwords.
+- Keep admin-monitor and embedded pages on their current origin without bypassing server authentication, so monitor chat retains the signed-in admin session.

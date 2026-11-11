@@ -3,6 +3,7 @@ import { bundlePasswordValidForReplay } from "../_shared/bundle.ts";
 import { isRequestBlocked } from "../_shared/user-block.ts";
 import { yearlyPasswordOk } from "../_shared/yearly-password.ts";
 import { findMembershipByPassword, membershipPasswordOk, membershipReplayPasswordOk } from "../_shared/membership-password.ts";
+import { samePassword, passwordMonths } from "../_shared/password-rules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,12 +36,13 @@ async function bindMembershipDevice(supabase: any, tokenRow: any, browser_id: st
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { replay_id, password, mtoken, mpassword, browser_id } = await req.json();
+    const { replay_id, password: rawPassword, mtoken, mpassword, browser_id } = await req.json();
+    const password = String(rawPassword || '').trim();
     if (!replay_id) return json({ valid: false });
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_URL") || '',
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ''
     );
 
     if (await isRequestBlocked(supabase, req, { tokens: [mtoken], password: password || mpassword })) {
@@ -83,7 +85,7 @@ Deno.serve(async (req) => {
 
     if (!password) return json({ valid: false });
 
-    if (replay.password === password) {
+    if (samePassword(replay.password, password)) {
       await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: true });
       return json({ valid: true });
     }
@@ -121,12 +123,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const d = new Date(replay.date);
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const { data: masters } = await supabase
-      .from("master_passwords").select("password, paused").eq("month", monthKey);
+      .from("master_passwords").select("password, paused").in("month", passwordMonths(replay.date));
 
-    const valid = (masters || []).some((m: any) => m.paused !== true && m.password === password);
+    const valid = (masters || []).some((m: any) => m.paused !== true && samePassword(m.password, password));
     await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: valid });
     return json({ valid });
   } catch {

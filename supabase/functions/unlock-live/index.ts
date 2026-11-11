@@ -5,6 +5,7 @@ import { bundlePasswordValidForShow } from "../_shared/bundle.ts";
 import { yearlyPasswordOk } from "../_shared/yearly-password.ts";
 import { isRequestBlocked } from "../_shared/user-block.ts";
 import { syncShowsWithSforge } from "../_shared/sforge.ts";
+import { samePassword, passwordMonths } from "../_shared/password-rules.ts";
 
 // Isi otomatis Server 2/3 dari SForge bila masih kosong (tanpa admin buka dashboard SForge).
 async function autoSforge(supabase: any, show: any) {
@@ -90,8 +91,8 @@ Deno.serve(async (req) => {
     let { mtoken, mpassword } = body;
     const isSilent = silent === true;
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("SUPABASE_URL") || '',
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || '',
     );
 
     if (browser_id) {
@@ -179,7 +180,7 @@ Deno.serve(async (req) => {
             valid: true, enabled: !!cfg?.enabled,
             title: cfg?.title || "Membership", type: cfg?.type || "m3u8",
             url: cfg?.url || "",
-            sources: Array.isArray(cfg?.sources) ? cfg!.sources : [],
+            sources: Array.isArray(cfg?.sources) ? cfg.sources : [],
           };
         }
       }
@@ -239,6 +240,7 @@ Deno.serve(async (req) => {
       })();
       const enabled = !!show.is_live || autoLiveNow;
       const okPayload = {
+        show_id: show.id,
         valid: true, enabled, title: show.title, type: show.live_type || "m3u8",
         url: show.live_url || "",
         sources: Array.isArray(show.live_sources) ? show.live_sources : [],
@@ -334,8 +336,7 @@ Deno.serve(async (req) => {
         const { data: lock } = await supabase.rpc('check_login_lock', { _identifier: lockId });
         const lockRow = Array.isArray(lock) ? lock[0] : lock;
         if (lockRow?.locked) return json({ valid: false, reason: 'rate_limited', seconds_remaining: lockRow.seconds_remaining });
-        const pwNorm = String(password).trim().toUpperCase();
-        const same = (a: unknown) => !!a && String(a).trim().toUpperCase() === pwNorm;
+        const same = (a: unknown) => samePassword(a, password);
         let valid = same(show.live_password);
         if (!valid && (show as any).replay_id) {
           // Sandi replay buatan admin untuk show ini juga membuka live show yang sama.
@@ -344,14 +345,8 @@ Deno.serve(async (req) => {
         }
         if (!valid) {
           // Sandi master bulanan: terima master bulan show DAN master bulan berjalan.
-          const months = new Set<string>();
-          const addMonth = (dt: Date) => {
-            if (!isNaN(dt.getTime())) months.add(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`);
-          };
-          if (show.show_date) addMonth(new Date(show.show_date));
-          addMonth(new Date(Date.now() + 7 * 3600 * 1000));
           const { data: masters } = await supabase
-            .from("master_passwords").select("password,paused,month").in("month", [...months]);
+            .from("master_passwords").select("password,paused,month").in("month", passwordMonths(show.show_date));
           valid = (masters || []).some((m: any) => m.paused !== true && same(m.password));
         }
         if (!valid) valid = await yearlyPasswordOk(supabase, String(password));
@@ -433,13 +428,11 @@ Deno.serve(async (req) => {
       const { data: lock } = await supabase.rpc('check_login_lock', { _identifier: lockId });
       const lockRow = Array.isArray(lock) ? lock[0] : lock;
       if (lockRow?.locked) return json({ valid: false, reason: 'rate_limited', seconds_remaining: lockRow.seconds_remaining });
-      let valid = !!cfg.password && cfg.password === password;
+      let valid = samePassword(cfg.password, password);
       if (!valid) {
-        const now = new Date(Date.now() + 7 * 3600 * 1000);
-        const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
         const { data: masters } = await supabase
-          .from("master_passwords").select("password,paused").eq("month", monthKey);
-        valid = (masters || []).some((m: any) => m.paused !== true && m.password === password);
+          .from("master_passwords").select("password,paused").in("month", passwordMonths(null));
+        valid = (masters || []).some((m: any) => m.paused !== true && samePassword(m.password, password));
       }
       if (!valid) valid = await yearlyPasswordOk(supabase, String(password));
       await supabase.rpc('record_login_attempt', { _identifier: lockId, _success: valid });

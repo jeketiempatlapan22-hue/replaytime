@@ -1,3 +1,4 @@
+import { samePassword } from './password-rules.ts';
 // Helper bersama untuk fitur "Bundel Show":
 // satu pembelian => satu token bundel + sub-token per show (agar seluruh
 // pengecekan akses per-show yang sudah ada tetap berlaku apa adanya).
@@ -195,12 +196,10 @@ export async function bundlePasswordValidForReplay(
   password: string,
 ): Promise<boolean> {
   if (!password) return false;
-  const { data: pw } = await admin
+  const { data: passwords } = await admin
     .from('show_bundle_passwords')
-    .select('bundle_id')
-    .ilike('password', String(password).trim())
-    .limit(1)
-    .maybeSingle();
+    .select('bundle_id,password');
+  const bundleIds = (passwords || []).filter((r: any) => samePassword(r.password, password)).map((r: any) => r.bundle_id);
 
   const { data: shows } = await admin
     .from('active_shows').select('id').eq('replay_id', replayId);
@@ -211,17 +210,16 @@ export async function bundlePasswordValidForReplay(
   // walau show kemudian dikeluarkan dari bundel.
   const { data: tk } = await admin
     .from('show_bundle_tokens')
-    .select('id')
-    .ilike('password', String(password).trim())
-    .overlaps('show_ids', ids)
-    .limit(1);
-  if (tk?.length) return true;
-  if (!pw) return false;
+    .select('id,password')
+    .eq('revoked', false)
+    .overlaps('show_ids', ids);
+  if ((tk || []).some((r: any) => samePassword(r.password, password))) return true;
+  if (!bundleIds.length) return false;
 
   const { data: item } = await admin
     .from('show_bundle_items')
     .select('id')
-    .eq('bundle_id', pw.bundle_id)
+    .in('bundle_id', bundleIds)
     .eq('excluded', false)
     .in('show_id', ids)
     .limit(1)
@@ -263,15 +261,13 @@ export async function bundlePasswordValidForShow(
   if (!pw || !showId) return false;
   const { data: tk } = await admin
     .from('show_bundle_tokens')
-    .select('id')
+    .select('id,password')
     .eq('revoked', false)
-    .ilike('password', pw)
-    .contains('show_ids', [showId])
-    .limit(1);
-  if (tk?.length) return true;
+    .contains('show_ids', [showId]);
+  if ((tk || []).some((r: any) => samePassword(r.password, pw))) return true;
   const { data: pws } = await admin
-    .from('show_bundle_passwords').select('bundle_id').ilike('password', pw).limit(5);
-  const bundleIds = (pws || []).map((r: any) => r.bundle_id);
+    .from('show_bundle_passwords').select('bundle_id,password');
+  const bundleIds = (pws || []).filter((r: any) => samePassword(r.password, pw)).map((r: any) => r.bundle_id);
   if (!bundleIds.length) return false;
   const { data: item } = await admin
     .from('show_bundle_items').select('id')

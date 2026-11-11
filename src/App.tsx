@@ -14,6 +14,7 @@ import BottomNav from "./components/BottomNav";
 import MaintenanceGate from "./components/MaintenanceGate";
 import GuestOnboardBanner from "./components/GuestOnboardBanner";
 import { getSiteRouting, redirectsDisabled, crossTarget, replayLocked, withLiveCredentials, buildReplayHandoff, isLocalSecretReplay } from "@/lib/siteRedirect";
+import { keepMonitorLocal } from "@/lib/monitorRouting";
 
 
 const Index = lazy(() => import("./pages/Index"));
@@ -62,7 +63,7 @@ function DomainRouter({ children }: { children: React.ReactNode }) {
     let alive = true;
     (async () => {
       const path = location.pathname.toLowerCase();
-      if (/^\/(adpan|reseller)/.test(path) || redirectsDisabled()) { if (alive) setReady(true); return; }
+      if (/^\/(adpan|reseller)/.test(path) || redirectsDisabled() || keepMonitorLocal(location.search, window.self !== window.top)) { if (alive) setReady(true); return; }
       try {
         const r = await getSiteRouting();
         if (isLocalSecretReplay(r, location.pathname, location.search)) {
