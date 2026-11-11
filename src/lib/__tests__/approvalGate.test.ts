@@ -8,7 +8,7 @@ function fakeAdmin(mode: string) {
     update: (v: any) => ({ eq: async () => { calls.push(['update', table, v]); return { error: null }; } }),
     insert: async (v: any) => { calls.push(['insert', table, v]); return { error: null }; },
   });
-  return { from: q, calls };
+  return { from: q, calls, rpc: async (name: string, args: any) => { calls.push(['rpc', name, args]); return { error: null }; } };
 }
 
 describe('admin approval gate', () => {
@@ -27,12 +27,13 @@ describe('admin approval gate', () => {
     expect(await holdForApproval(a, order)).toBe(true);
     expect(order.status).toBe('awaiting_approval');
     expect(a.calls.some((c) => c[0] === 'insert' && c[1] === 'membership_payment_proofs')).toBe(true);
+    expect(a.calls.find(c => c[0] === 'rpc')).toEqual(['rpc', 'service_provision_review_token', { _id: 'o1', _membership: false }]);
   });
   it('lets the order through when the mode is off', async () => {
     const a = fakeAdmin('false');
     expect(await holdForApproval(a, { id: 'o2', kind: 'show', status: 'pending' })).toBe(false);
   });
-  it('holds confirmed guest membership with its own proof and no token', async () => {
+  it('holds confirmed guest membership with a copyable token before approval', async () => {
     const a = fakeAdmin('true');
     const order = { id: 'm1', package_id: 'p1', status: 'reserved', user_id: null, phone: '628123', email: 'buyer@example.test', amount: 10000 };
     expect(await holdMembershipForApproval(a, order, 'Pakasir')).toBe(true);
@@ -40,6 +41,7 @@ describe('admin approval gate', () => {
     expect(a.calls.find(c => c[0] === 'update')[1]).toBe('membership_orders');
     expect(a.calls.find(c => c[0] === 'insert')[2]).toMatchObject({ order_id: 'm1', user_id: null, phone: '628123', amount: 10000 });
     expect(a.calls.some(c => c[1] === 'membership_tokens')).toBe(false);
+    expect(a.calls.find(c => c[0] === 'rpc')).toEqual(['rpc', 'service_provision_review_token', { _id: 'm1', _membership: true }]);
   });
   it('does not activate rejected membership even when approval mode is later off', async () => {
     const a = fakeAdmin('false');

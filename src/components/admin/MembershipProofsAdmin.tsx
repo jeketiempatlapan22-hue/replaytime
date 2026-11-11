@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { adminWaNumber } from '@/lib/adminWa';
 import { toast } from '@/hooks/use-toast';
+import { copyToClipboard } from '@/lib/clipboard';
 
 type Proof = {
   id: string; order_id: string | null; show_order_id: string | null; user_id: string | null;
@@ -28,6 +29,7 @@ export default function MembershipProofsAdmin() {
   const [manual, setManual] = useState<Record<string, { kind: string; target: string }>>({});
   const [targets, setTargets] = useState<{ shows: Opt[]; replays: Opt[]; packages: Opt[] }>({ shows: [], replays: [], packages: [] });
   const [results, setResults] = useState<Record<string, string>>({});
+  const [copyMessages, setCopyMessages] = useState<Record<string, string>>({});
   const [savingWa, setSavingWa] = useState(false);
   const [approvalMode, setApprovalMode] = useState(false);
   const [orderInfo, setOrderInfo] = useState<Record<string, { status: string; access_token: string | null; show_id: string | null; replay_id: string | null; kind: string; item_title: string; user_phone: string }>>({});
@@ -71,10 +73,16 @@ export default function MembershipProofsAdmin() {
     toast({ title: action === 'reject' ? 'Pesanan ditolak' : 'Status dikembalikan ke Pending' });
   };
   const copyTokenMessage = async (r: Proof) => {
-    const { data, error } = await supabase.functions.invoke('admin-approve-proof', { body: { proof_id: r.id, action: 'message' } });
+    const m = manual[r.id];
+    if (!r.order_id && !r.show_order_id && !(m?.kind && m?.target)) {
+      return toast({ title: 'Pilih jenis dan target pesanan terlebih dahulu', variant: 'destructive' });
+    }
+    const { data, error } = await supabase.functions.invoke('admin-approve-proof', { body: { proof_id: r.id, action: 'message', kind: m?.kind, target_id: m?.target } });
     const res = data as any;
-    if (error || !res?.ok) return toast({ title: 'Token belum ada', description: 'Setujui pesanan dulu agar token terbit.', variant: 'destructive' });
+    if (error || !res?.ok) return toast({ title: 'Gagal mengambil pesan token', description: 'Coba kembali atau periksa target pesanan.', variant: 'destructive' });
+    setCopyMessages((previous) => ({ ...previous, [r.id]: res.message }));
     void copyText(res.message, 'Link token + info replay');
+    void load();
   };
 
   const load = async () => {
@@ -115,6 +123,12 @@ export default function MembershipProofsAdmin() {
   };
 
   useEffect(() => { void load(); void loadWa(); void loadTargets(); void loadApprovalMode(); }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => { void load(); }, 5000);
+    const refresh = () => { if (!document.hidden) void load(); };
+    window.addEventListener('focus', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, []);
 
   const saveWa = async () => {
     setSavingWa(true);
@@ -132,21 +146,8 @@ export default function MembershipProofsAdmin() {
   const copyText = async (text: string, label: string) => {
     const value = String(text || '').trim();
     if (!value) { toast({ title: 'Data kosong', variant: 'destructive' }); return; }
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(value);
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = value;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      }
-      toast({ title: `${label} disalin`, description: value });
-    } catch { toast({ title: 'Gagal menyalin', variant: 'destructive' }); }
+    const copied = await copyToClipboard(value);
+    toast({ title: copied ? `${label} disalin` : 'Salin teks lengkap yang ditampilkan di bawah pesanan', variant: copied ? 'default' : 'destructive' });
   };
 
 
@@ -210,7 +211,7 @@ export default function MembershipProofsAdmin() {
         <CardContent className="pt-4 flex items-start justify-between gap-3">
           <div>
             <div className="font-semibold text-sm flex items-center gap-2"><ShieldCheck className="w-4 h-4" />Wajib Persetujuan Admin Setelah Bayar</div>
-            <p className="text-xs text-muted-foreground">Jika aktif, pembelian show/replay/bundle/membership yang sudah lunas di QRIS berstatus Pending sampai Anda menekan Setujui di bawah. Berlaku untuk user login, guest, dan tanpa login.</p>
+            <p className="text-xs text-muted-foreground">Jika aktif, show/bundle/membership menunggu persetujuan. Token dapat disalin setelah pembayaran terkonfirmasi atau bukti dikirim. Replay terkonfirmasi tetap langsung aktif. Berlaku untuk semua pembeli.</p>
           </div>
           <Switch checked={approvalMode} onCheckedChange={toggleApprovalMode} />
         </CardContent>
@@ -329,7 +330,7 @@ export default function MembershipProofsAdmin() {
                           <RotateCcw className="w-3 h-3 mr-1" />Reset
                         </Button>
                       )}
-                      {(r.show_order_id || r.order_id) && (
+                      {(r.show_order_id || r.order_id || (manual[r.id]?.kind && manual[r.id]?.target)) && (
                         <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => copyTokenMessage(r)}>
                           <Copy className="w-3 h-3 mr-1" />Salin Link Token + Info Replay
                         </Button>
@@ -341,6 +342,7 @@ export default function MembershipProofsAdmin() {
                         <Trash2 className="w-3 h-3 mr-1" />Hapus
                       </Button>
                     </div>
+                    {copyMessages[r.id] && <textarea aria-label="Pesan token dan sandi lengkap" readOnly value={copyMessages[r.id]} className="w-full min-h-40 rounded border border-input bg-background p-2 text-xs select-text" />}
                   </div>
                 </div>
               ))}

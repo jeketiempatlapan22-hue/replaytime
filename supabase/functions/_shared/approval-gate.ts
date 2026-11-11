@@ -1,6 +1,6 @@
 // Admin Approval Gate: when site_settings.require_admin_approval = 'true',
 // gateway-confirmed show/replay/bundle orders are held as 'awaiting_approval'
-// (no token issued) until an admin approves them in Bukti Transaksi.
+// Credentials are provisioned for admin copying while the buyer stays Pending.
 // Approval sets status 'paid' and delegates to check-pakasir-status to finalize.
 // deno-lint-ignore-file no-explicit-any
 
@@ -37,10 +37,12 @@ export async function holdForApproval(admin: any, order: any, source = 'gateway'
       expires_at: new Date(Date.now() + 14 * 86400_000).toISOString(),
     });
   }
+  const { error: tokenError } = await admin.rpc('service_provision_review_token', { _id: order.id, _membership: false });
+  if (tokenError) throw tokenError;
   return true;
 }
 
-/** Membership orders live separately; never issue credentials while awaiting review. */
+/** Membership credentials can be copied before approval; UI status stays pending. */
 export async function holdMembershipForApproval(admin: any, order: any, source = 'gateway'): Promise<boolean> {
   if (!order || order.status === 'paid') return false;
   if (order.status === 'awaiting_approval' || order.status === 'rejected') return true;
@@ -63,6 +65,8 @@ export async function holdMembershipForApproval(admin: any, order: any, source =
     });
     if (proofError) throw proofError;
   }
+  const { error: tokenError } = await admin.rpc('service_provision_review_token', { _id: order.id, _membership: true });
+  if (tokenError) throw tokenError;
   return true;
 }
 

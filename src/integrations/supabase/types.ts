@@ -3504,6 +3504,10 @@ export type Database = {
         }[]
       }
       rotate_membership_passwords: { Args: never; Returns: number }
+      service_provision_review_token: {
+        Args: { _id: string; _membership?: boolean }
+        Returns: undefined
+      }
       service_send_live_chat: {
         Args: { _message: Json; _sender: Json }
         Returns: Json

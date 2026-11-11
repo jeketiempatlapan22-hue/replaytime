@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { reviewTransition } from '../_shared/approval-gate.ts';
+import { buildCopyMessage } from '../_shared/proof-message.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -53,11 +54,6 @@ Deno.serve(async (req) => {
     }
 
     const action = body.action;
-    if (action === 'message') {
-      const msg = await buildCopyMessage(admin, proof);
-      if (!msg) return new Response(JSON.stringify({ error: 'token_not_ready' }), { status: 409, headers: corsHeaders });
-      return new Response(JSON.stringify({ ok: true, message: msg }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
     if (action === 'reject' || action === 'reset') {
       const table = proof.order_id ? 'membership_orders' : 'orders';
       const linkedId = proof.order_id || proof.show_order_id;
@@ -135,6 +131,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (action === 'message') {
+      const msg = await buildCopyMessage(admin, proof);
+      if (!msg) return new Response(JSON.stringify({ error: 'token_not_ready' }), { status: 409, headers: corsHeaders });
+      return new Response(JSON.stringify({ ok: true, message: msg }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     // Membership branch
     if (proof.order_id) {
       orderKind = 'membership';
@@ -181,9 +183,11 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ order_id: orderIdToPoll }),
       });
-      finalize = await fnRes.json().catch(() => ({}));
+      const result = await fnRes.json().catch(() => ({}));
+      if (!fnRes.ok || result.error) throw new Error(result.error || 'finalize_failed');
+      finalize = result;
     } catch (e) {
-      finalize = { error: String(e) };
+      return new Response(JSON.stringify({ error: 'finalize_failed', detail: String(e) }), { status: 500, headers: corsHeaders });
     }
 
     // Record the admin decision separately from image/handled state.

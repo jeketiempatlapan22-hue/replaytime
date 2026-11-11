@@ -1,5 +1,13 @@
 # Roadmap — Perintah_Website_A_v2.txt
 
+## Token sebelum persetujuan dan sinkronisasi dua website
+- [x] Terbitkan token saat gateway terkonfirmasi atau bukti terhubung diunggah; pencabutan saat ditolak dan pemulihan saat reset.
+- [x] Perbaiki pesan salin sandi show/bundle/custom dan sediakan teks lengkap jika clipboard gagal.
+- [x] Simpan keputusan melalui data bersama dan muat ulang otomatis panel bukti pada proyek ini.
+- [x] Uji 17 aturan penyalinan/persetujuan, deploy enam fungsi, periksa halaman login admin tanpa error, dan siapkan token pesanan lama yang memenuhi syarat.
+- [ ] Uji tombol salin dan akses Website B dengan admin masuk — sesi akun peminta tidak tersedia; perlu masuk melalui preview.
+- [ ] Terapkan pembaruan tampilan otomatis pada proyek Website B — kode proyek lain tidak tersedia pada checkout ini; keputusan dan token sudah dibagikan melalui database yang sama.
+
 ## Persetujuan membership dan bukti manual
 - [x] Tahan membership terkonfirmasi sampai disetujui admin; pertahankan akses WhatsApp.
 - [x] Setujui, tolak, dan reset bukti manual, termasuk bukti tanpa pesanan terhubung.
